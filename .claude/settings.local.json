@@ -3,7 +3,16 @@
     "allow": [
       "Bash(git --version)",
       "Bash(git init:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git config:*)",
+      "Bash(git remote:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(mkdir -p \"$USERPROFILE/.ssh\")",
+      "Bash(cp \"C:\\\\Users\\\\NeoLAB\\\\Desktop\\\\cms\\\\deploy-key-infra-kms\" \"$USERPROFILE/.ssh/deploy-key-infra-kms\")",
+      "Bash(ssh -i \"$USERPROFILE/.ssh/deploy-key-infra-kms\" -p 22022 -o StrictHostKeyChecking=no -o ConnectTimeout=10 ubuntu@130.162.139.142 \"echo ''SSH 접속 성공'' && node -v && pm2 -v && ls /opt/neolab-kms/\")",
+      "Bash(git reset:*)"
     ]
   }
 }
