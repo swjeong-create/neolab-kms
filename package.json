@@ -1,0 +1,25 @@
+{
+  "name": "neolab-kms",
+  "version": "1.0.0",
+  "description": "NeoLab 사내 지식포탈 (KMS)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "pm2:start": "pm2 start server.js --name kms --watch --ignore-watch=\"logs sessions uploads uploads_backup node_modules .git\"",
+    "pm2:stop": "pm2 stop kms",
+    "pm2:restart": "pm2 restart kms",
+    "pm2:logs": "pm2 logs kms",
+    "migrate": "node migrate.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "googleapis": "^144.0.0",
+    "multer": "^1.4.5-lts.1",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "session-file-store": "^1.5.0",
+    "uuid": "^11.1.0"
+  }
+}
