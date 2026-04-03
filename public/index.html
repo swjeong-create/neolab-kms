@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=12">
+    <link rel="stylesheet" href="css/style.css?v=13">
     <!-- CSS is loaded from css/style.css -->
 </head>
 <body>
@@ -346,7 +346,8 @@
                 <nav class="admin-sidebar-nav">
                     <div class="admin-sidebar-label">게시판</div>
                     <div class="admin-nav-item active" data-tab="menuAdmin"><span class="nav-icon">📁</span> 메뉴/카테고리</div>
-                    <div class="admin-nav-item" data-tab="postAdmin"><span class="nav-icon">📝</span> 게시물 관리</div>
+                    <div class="admin-nav-item" data-tab="postAdmin"><span class="nav-icon">📋</span> 게시물 목록</div>
+                    <div class="admin-nav-item" data-tab="postWrite"><span class="nav-icon">✏️</span> 게시물 등록/수정</div>
                     <div class="admin-nav-item" data-tab="infraAdmin"><span class="nav-icon">🔗</span> 인프라 관리</div>
                     <div class="admin-sidebar-label">관리</div>
                     <div class="admin-nav-item" data-tab="contacts"><span class="nav-icon">👥</span> 인사정보</div>
@@ -455,9 +456,16 @@
 
                     <!-- &#54168;&#51060;&#51648;&#45348;&#51060;&#49496; -->
                     <div class="admin-pagination" id="adminPostPagination"></div>
+                </div>
 
-                    <hr style="margin: 24px 0; border: none; border-top: 1px solid var(--border-color);">
-                    <h3 style="margin-bottom: 12px;">📝 통합 문서/게시물 등록</h3>
+                <div class="admin-tab-content" id="postWriteTab">
+                    <h2>✏️ 게시물 등록/수정</h2>
+                    <p style="color:var(--text-secondary); margin-bottom:20px; font-size:14px;">새 게시물을 등록하거나, 게시물 목록에서 수정 버튼을 누르면 이 탭에서 편집됩니다.</p>
+
+                    <div id="editPostIndicator" style="display:none; margin-bottom:16px; padding:12px 16px; background:rgba(255,103,32,0.1); border:1px solid var(--primary); border-radius:8px; color:var(--primary); font-weight:600;">
+                        📝 수정 중: <span id="editPostTitle"></span>
+                        <button type="button" onclick="cancelEditPostForm()" style="margin-left:12px; background:none; border:1px solid #ef4444; color:#ef4444; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:12px;">취소 (신규 작성으로)</button>
+                    </div>
 
                     <div class="admin-row">
                         <div class="admin-form-group">
@@ -517,7 +525,7 @@
                     <button type="button" class="admin-btn admin-btn-success" id="addPostBtn">게시물 등록</button>
 
                     <hr style="margin: 24px 0; border: none; border-top: 1px solid var(--border-color);">
-                    <h3 style="margin-bottom: 12px;">📋 등록된 게시물 목록</h3>
+                    <h3 style="margin-bottom: 12px;">📋 전체 게시물</h3>
                     <div class="admin-row" style="margin-bottom: 12px;">
                         <div class="admin-form-group" style="flex:1;">
                             <select id="postFilterBoard" onchange="filterAdminPosts()" style="padding:8px 12px;">
@@ -908,13 +916,13 @@
         </div>
     </div>
 
-<script src="js/core.js?v=12"></script>
-<script src="js/navigation.js?v=12"></script>
-<script src="js/search.js?v=12"></script>
-<script src="js/viewer.js?v=12"></script>
-<script src="js/board.js?v=12"></script>
-<script src="js/features.js?v=12"></script>
-<script src="js/app.js?v=12"></script>
-<script src="js/admin.js?v=12"></script>
+<script src="js/core.js?v=13"></script>
+<script src="js/navigation.js?v=13"></script>
+<script src="js/search.js?v=13"></script>
+<script src="js/viewer.js?v=13"></script>
+<script src="js/board.js?v=13"></script>
+<script src="js/features.js?v=13"></script>
+<script src="js/app.js?v=13"></script>
+<script src="js/admin.js?v=13"></script>
 </body>
 </html>

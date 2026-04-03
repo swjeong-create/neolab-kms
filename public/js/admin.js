@@ -164,7 +164,55 @@ window.openWriteModal = async function(postId) {
 };
 
 window.closeWriteModal = function() { document.getElementById('writeModalOverlay').classList.remove('show'); adminEditPostId = null; };
-window.editPost = function(id) { openWriteModal(id); };
+window.editPost = async function(id) {
+    // postWrite 탭으로 전환
+    document.querySelectorAll('.admin-nav-item').forEach(function(n) { n.classList.remove('active'); });
+    var navItem = document.querySelector('.admin-nav-item[data-tab="postWrite"]');
+    if (navItem) navItem.classList.add('active');
+    document.querySelectorAll('.admin-tab-content').forEach(function(e) { e.classList.remove('active'); });
+    var tab = document.getElementById('postWriteTab');
+    if (tab) tab.classList.add('active');
+    var titleEl = document.getElementById('adminPageTitle');
+    if (titleEl) titleEl.textContent = '✏️ 게시물 등록/수정';
+
+    // 게시물 데이터 로드
+    var post = await api.get('/api/posts/' + id);
+    if (!post) return;
+
+    editPostId = id;
+    document.getElementById('postBoardSel').value = post.boardId;
+    await updatePostCategoryDropdown();
+    setTimeout(function() { document.getElementById('postCatSel').value = post.categoryId; }, 50);
+    document.getElementById('postType').value = post.type || 'text';
+    togglePostFields();
+    document.getElementById('postTitle').value = post.title || '';
+    document.getElementById('postIcon').value = post.icon || '';
+    document.getElementById('postSubInfo').value = post.subInfo || '';
+    document.getElementById('postContent').value = post.content || '';
+    document.getElementById('postUrl').value = post.url || '';
+    if (post.fileName) document.getElementById('postFileName').value = post.fileName;
+
+    // 수정 중 표시
+    document.getElementById('editPostIndicator').style.display = 'block';
+    document.getElementById('editPostTitle').textContent = post.title;
+    var btn = document.getElementById('addPostBtn');
+    if (btn) { btn.textContent = '저장'; btn.classList.replace('admin-btn-success', 'admin-btn-primary'); }
+
+    document.querySelector('.admin-container').scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+window.cancelEditPostForm = function() {
+    editPostId = null;
+    document.getElementById('editPostIndicator').style.display = 'none';
+    document.getElementById('postTitle').value = '';
+    document.getElementById('postContent').value = '';
+    document.getElementById('postUrl').value = '';
+    document.getElementById('postIcon').value = '';
+    document.getElementById('postSubInfo').value = '';
+    document.getElementById('postFileName').value = '';
+    var btn = document.getElementById('addPostBtn');
+    if (btn) { btn.textContent = '게시물 등록'; btn.classList.replace('admin-btn-primary', 'admin-btn-success'); }
+};
 
 window.updateWriteCategories = function() {
     const boardId = document.getElementById('writeBoard').value;
@@ -370,6 +418,7 @@ document.querySelectorAll('.admin-nav-item').forEach(nav => {
         // 탭별 데이터 새로고침
         if (tab === 'contacts') loadAdminContacts();
         if (tab === 'postAdmin') loadAdminPostTable();
+        if (tab === 'postWrite') loadAdminPosts();
         if (tab === 'infraAdmin') loadAdminInfra();
         if (tab === 'suggestionsAdmin') loadAdminSuggestions();
     });
