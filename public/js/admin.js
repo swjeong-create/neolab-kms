@@ -370,6 +370,7 @@ document.querySelectorAll('.admin-nav-item').forEach(nav => {
         // 탭별 데이터 새로고침
         if (tab === 'contacts') loadAdminContacts();
         if (tab === 'postAdmin') loadAdminPostTable();
+        if (tab === 'infraAdmin') loadAdminInfra();
         if (tab === 'suggestionsAdmin') loadAdminSuggestions();
     });
 });
@@ -383,7 +384,7 @@ document.querySelectorAll('.admin-tab').forEach(tab => {
 
 async function loadAdminPanelData() {
     invalidateAll();
-    const fns = [loadAdminMenuManager, loadAdminPosts, loadAdminPostTable, loadAdminNotices, loadAdminContacts, loadAdminOrgChart, loadAdminSettings, loadAdminSuggestions];
+    const fns = [loadAdminMenuManager, loadAdminPosts, loadAdminPostTable, loadAdminNotices, loadAdminContacts, loadAdminOrgChart, loadAdminSettings, loadAdminSuggestions, loadAdminInfra];
     if (currentUser && currentUser.isSuperAdmin) fns.push(loadAdminList);
     await Promise.all(fns.map(fn => fn().catch(err => console.error('[Admin]', fn.name, '오류:', err))));
 }
@@ -1350,6 +1351,127 @@ window.deleteSuggestion = async function(id) {
         await api.del('/api/suggestions/' + id);
         invalidateAll();
         await loadAdminSuggestions();
+    } catch(e) { alert('삭제 실패: ' + e.message); }
+};
+
+/* ── 인프라 관리 ── */
+var editInfraId = null;
+
+async function loadAdminInfra() {
+    try {
+        var posts = await api.get('/api/posts');
+        var infraPosts = posts.filter(function(p) { return p.boardId === 'infra'; });
+        var countEl = document.getElementById('adminInfraCount');
+        if (countEl) countEl.textContent = '총 ' + infraPosts.length + '개';
+
+        var listEl = document.getElementById('infraList');
+        if (!listEl) return;
+
+        if (infraPosts.length === 0) {
+            listEl.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:40px; color:var(--text-light);">등록된 인프라가 없습니다.</td></tr>';
+            return;
+        }
+
+        listEl.innerHTML = infraPosts.map(function(p) {
+            var iconHtml = p.thumbnail
+                ? '<img src="/api/files/' + p.thumbnail + '" style="width:36px; height:36px; border-radius:8px; object-fit:contain;">'
+                : '<span style="font-size:24px;">' + (p.icon || '🔗') + '</span>';
+            return '<tr>' +
+                '<td style="text-align:center;">' + iconHtml + '</td>' +
+                '<td style="font-weight:600;">' + (p.title || '') + '</td>' +
+                '<td style="font-size:13px; color:var(--text-secondary); max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + (p.url || '') + '</td>' +
+                '<td>' +
+                    '<button type="button" onclick="editInfra(\'' + p.id + '\')" style="background:none; border:1px solid var(--primary); color:var(--primary); padding:4px 10px; border-radius:4px; cursor:pointer; font-size:12px; margin-right:4px;">수정</button>' +
+                    '<button type="button" onclick="deleteInfra(\'' + p.id + '\')" style="background:none; border:1px solid #ef4444; color:#ef4444; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:12px;">삭제</button>' +
+                '</td></tr>';
+        }).join('');
+    } catch(e) { console.error('인프라 로드 실패:', e); }
+}
+
+window.openInfraModal = function(id) {
+    editInfraId = id || null;
+    var modal = document.getElementById('infraModal');
+    var title = document.getElementById('infraModalTitle');
+
+    if (id) {
+        title.textContent = '인프라 수정';
+        api.get('/api/posts/' + id).then(function(p) {
+            document.getElementById('infraName').value = p.title || '';
+            document.getElementById('infraUrl').value = p.url || '';
+            document.getElementById('infraIcon').value = p.icon || '';
+            var preview = document.getElementById('infraThumbPreview');
+            if (preview) preview.innerHTML = p.thumbnail ? '<img src="/api/files/' + p.thumbnail + '" style="max-height:40px; border-radius:6px;"> <span style="font-size:12px; color:var(--text-light);">기존 아이콘</span>' : '';
+        });
+    } else {
+        title.textContent = '인프라 추가';
+        document.getElementById('infraName').value = '';
+        document.getElementById('infraUrl').value = '';
+        document.getElementById('infraIcon').value = '';
+        if (document.getElementById('infraThumb')) document.getElementById('infraThumb').value = '';
+        var preview = document.getElementById('infraThumbPreview');
+        if (preview) preview.innerHTML = '';
+    }
+    modal.classList.add('show');
+    document.getElementById('infraName').focus();
+};
+
+window.closeInfraModal = function() {
+    document.getElementById('infraModal').classList.remove('show');
+    editInfraId = null;
+};
+
+window.submitInfraModal = async function() {
+    var name = document.getElementById('infraName').value.trim();
+    var url = document.getElementById('infraUrl').value.trim();
+    var icon = document.getElementById('infraIcon').value.trim();
+
+    if (!name) return alert('이름을 입력하세요.');
+    if (!url) return alert('URL을 입력하세요.');
+
+    // 아이콘 이미지 업로드
+    var thumbnail = '';
+    var thumbInput = document.getElementById('infraThumb');
+    if (thumbInput && thumbInput.files.length > 0) {
+        var fd = new FormData();
+        fd.append('file', thumbInput.files[0]);
+        var res = await fetch('/api/upload', { method: 'POST', body: fd });
+        var data = await res.json();
+        if (!data.error) thumbnail = data.fileName;
+    }
+
+    var postData = {
+        title: name,
+        url: url,
+        icon: icon || '🔗',
+        type: 'url',
+        boardId: 'infra',
+        categoryId: ''
+    };
+    if (thumbnail) postData.thumbnail = thumbnail;
+
+    try {
+        if (editInfraId) {
+            await api.put('/api/posts/' + editInfraId, postData);
+        } else {
+            await api.post('/api/posts', postData);
+        }
+        closeInfraModal();
+        invalidateAll();
+        await loadAdminInfra();
+        alert(editInfraId ? '수정되었습니다.' : '추가되었습니다.');
+    } catch(e) { alert('오류: ' + e.message); }
+};
+
+window.editInfra = function(id) {
+    openInfraModal(id);
+};
+
+window.deleteInfra = async function(id) {
+    if (!confirm('삭제하시겠습니까?')) return;
+    try {
+        await api.del('/api/posts/' + id);
+        invalidateAll();
+        await loadAdminInfra();
     } catch(e) { alert('삭제 실패: ' + e.message); }
 };
 

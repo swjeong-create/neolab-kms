@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=9">
+    <link rel="stylesheet" href="css/style.css?v=11">
     <!-- CSS is loaded from css/style.css -->
 </head>
 <body>
@@ -347,6 +347,7 @@
                     <div class="admin-sidebar-label">게시판</div>
                     <div class="admin-nav-item active" data-tab="menuAdmin"><span class="nav-icon">📁</span> 메뉴/카테고리</div>
                     <div class="admin-nav-item" data-tab="postAdmin"><span class="nav-icon">📝</span> 게시물 관리</div>
+                    <div class="admin-nav-item" data-tab="infraAdmin"><span class="nav-icon">🔗</span> 인프라 관리</div>
                     <div class="admin-sidebar-label">관리</div>
                     <div class="admin-nav-item" data-tab="contacts"><span class="nav-icon">👥</span> 인사정보</div>
                     <div class="admin-nav-item" data-tab="orgchartAdmin"><span class="nav-icon">🏢</span> 조직도</div>
@@ -530,6 +531,58 @@
                     <div class="admin-data-list" id="postsListContainer" style="max-height: 500px;"></div>
                 </div>
                 
+                <div class="admin-tab-content" id="infraAdminTab">
+                    <h2>🔗 인프라 관리</h2>
+                    <p style="color:var(--text-secondary); margin-bottom:20px; font-size:14px;">메일, 드라이브, 챗, 그룹웨어, ERP 등 인프라 바로가기 링크를 관리합니다.</p>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                        <div id="adminInfraCount" style="font-size:14px; color:var(--text-secondary);">총 0개</div>
+                        <button type="button" class="admin-write-btn" onclick="openInfraModal()">+ 인프라 추가</button>
+                    </div>
+
+                    <div style="overflow-x:auto;">
+                        <table class="admin-table" id="adminInfraTable">
+                            <thead>
+                                <tr>
+                                    <th style="width:60px;">아이콘</th>
+                                    <th>이름</th>
+                                    <th>URL</th>
+                                    <th style="width:100px;">관리</th>
+                                </tr>
+                            </thead>
+                            <tbody id="infraList"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 인프라 추가/수정 모달 -->
+                <div class="write-modal-overlay" id="infraModal" onclick="if(event.target===this) closeInfraModal()">
+                    <div class="write-modal" style="max-width:520px;">
+                        <h2 id="infraModalTitle">인프라 추가</h2>
+                        <div class="write-form-group">
+                            <label>이름</label>
+                            <input type="text" id="infraName" placeholder="예: Gmail, Google Drive, 그룹웨어">
+                        </div>
+                        <div class="write-form-group">
+                            <label>URL</label>
+                            <input type="text" id="infraUrl" placeholder="https://mail.google.com">
+                        </div>
+                        <div class="write-form-group">
+                            <label>아이콘 이모지 (선택)</label>
+                            <input type="text" id="infraIcon" placeholder="예: 📧, 📁, 💬" style="max-width:120px;">
+                        </div>
+                        <div class="write-form-group">
+                            <label>아이콘 이미지 (선택, 이모지 대신 이미지 사용)</label>
+                            <input type="file" id="infraThumb" accept=".png,.jpg,.jpeg,.gif,.webp">
+                            <div id="infraThumbPreview" style="margin-top:8px;"></div>
+                        </div>
+                        <div class="write-form-actions">
+                            <button type="button" class="write-cancel-btn" onclick="closeInfraModal()">취소</button>
+                            <button type="button" class="write-submit-btn" onclick="submitInfraModal()">저장</button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="admin-tab-content" id="noticesTab">
                     <h2>📢 공지사항 관리</h2>
                     <div class="admin-form-group"><label>제목</label><input type="text" id="noticeTitle"></div>
@@ -855,13 +908,13 @@
         </div>
     </div>
 
-<script src="js/core.js?v=9"></script>
-<script src="js/navigation.js?v=9"></script>
-<script src="js/search.js?v=9"></script>
-<script src="js/viewer.js?v=9"></script>
-<script src="js/board.js?v=9"></script>
-<script src="js/features.js?v=9"></script>
-<script src="js/app.js?v=9"></script>
-<script src="js/admin.js?v=9"></script>
+<script src="js/core.js?v=11"></script>
+<script src="js/navigation.js?v=11"></script>
+<script src="js/search.js?v=11"></script>
+<script src="js/viewer.js?v=11"></script>
+<script src="js/board.js?v=11"></script>
+<script src="js/features.js?v=11"></script>
+<script src="js/app.js?v=11"></script>
+<script src="js/admin.js?v=11"></script>
 </body>
 </html>
