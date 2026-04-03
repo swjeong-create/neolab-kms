@@ -137,7 +137,12 @@ window.openWriteModal = async function(postId) {
         var thumbPreview = document.getElementById('writeThumbPreview');
         if (thumbPreview) thumbPreview.innerHTML = post.thumbnail ? '<img src="/api/files/' + post.thumbnail + '" style="max-height:80px; border-radius:6px; border:1px solid var(--border-color);"> <span style="font-size:12px; color:var(--text-light);">기존 썸네일</span>' : '';
         var detailPreview = document.getElementById('writeDetailPreview');
-        if (detailPreview) detailPreview.innerHTML = post.detailImage ? '<img src="/api/files/' + post.detailImage + '" style="max-height:80px; border-radius:6px; border:1px solid var(--border-color);"> <span style="font-size:12px; color:var(--text-light);">기존 상세이미지</span>' : '';
+        if (detailPreview) {
+            var existingDetails = (post.detailImage || '').split('|').filter(Boolean);
+            detailPreview.innerHTML = existingDetails.map(function(f) {
+                return '<div style="position:relative; display:inline-block;"><img src="/api/files/' + f + '" style="max-height:80px; border-radius:6px; border:1px solid var(--border-color);"></div>';
+            }).join('') + (existingDetails.length ? '<div style="font-size:12px; color:var(--text-light); margin-top:4px;">기존 제품설명 이미지 ' + existingDetails.length + '장 (새로 선택하면 교체됩니다)</div>' : '');
+        }
     } else {
         title.textContent = '글쓰기';
         document.getElementById('writeTitle').value = '';
@@ -148,7 +153,7 @@ window.openWriteModal = async function(postId) {
         document.getElementById('writeFileStatus').textContent = '';
         if (document.getElementById('writeFile')) document.getElementById('writeFile').value = '';
         if (document.getElementById('writeThumb')) document.getElementById('writeThumb').value = '';
-        if (document.getElementById('writeDetailImage')) document.getElementById('writeDetailImage').value = '';
+        for (var di = 1; di <= 3; di++) { var dEl = document.getElementById('writeDetailImage' + di); if (dEl) dEl.value = ''; }
         var thumbPreview2 = document.getElementById('writeThumbPreview');
         if (thumbPreview2) thumbPreview2.innerHTML = '';
         var detailPreview2 = document.getElementById('writeDetailPreview');
@@ -209,15 +214,18 @@ window.submitWriteForm = async function() {
         if (!thumbData.error) thumbnail = thumbData.fileName;
     }
 
-    let detailImage = '';
-    const detailInput = document.getElementById('writeDetailImage');
-    if (detailInput && detailInput.files.length > 0) {
-        const formData3 = new FormData();
-        formData3.append('file', detailInput.files[0]);
-        const detailRes = await fetch('/api/upload', { method: 'POST', body: formData3 });
-        const detailData = await detailRes.json();
-        if (!detailData.error) detailImage = detailData.fileName;
+    var detailImages = [];
+    for (var dIdx = 1; dIdx <= 3; dIdx++) {
+        var detailInput = document.getElementById('writeDetailImage' + dIdx);
+        if (detailInput && detailInput.files.length > 0) {
+            var fd = new FormData();
+            fd.append('file', detailInput.files[0]);
+            var dRes = await fetch('/api/upload', { method: 'POST', body: fd });
+            var dData = await dRes.json();
+            if (!dData.error) detailImages.push(dData.fileName);
+        }
     }
+    var detailImage = detailImages.length > 0 ? detailImages.join('|') : '';
 
     const bgColor = document.getElementById('writeBgColor') ? document.getElementById('writeBgColor').value : '';
     const postData = { boardId, categoryId, title, type, subInfo, url, content, bgColor };

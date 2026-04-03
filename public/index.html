@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=7">
+    <link rel="stylesheet" href="css/style.css?v=8">
     <!-- CSS is loaded from css/style.css -->
 </head>
 <body>
@@ -753,9 +753,19 @@
                 <div id="writeThumbPreview" style="margin-top:8px;"></div>
             </div>
             <div class="write-form-group">
-                <label>상세 이미지 (클릭 시 확대 표시, 선택)</label>
-                <input type="file" id="writeDetailImage" accept=".png,.jpg,.jpeg,.gif">
-                <div id="writeDetailPreview" style="margin-top:8px;"></div>
+                <label>제품설명 이미지 (클릭 시 확대 표시, 최대 3장)</label>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <div style="flex:1; min-width:120px;">
+                        <input type="file" id="writeDetailImage1" accept=".png,.jpg,.jpeg,.gif" style="width:100%;">
+                    </div>
+                    <div style="flex:1; min-width:120px;">
+                        <input type="file" id="writeDetailImage2" accept=".png,.jpg,.jpeg,.gif" style="width:100%;">
+                    </div>
+                    <div style="flex:1; min-width:120px;">
+                        <input type="file" id="writeDetailImage3" accept=".png,.jpg,.jpeg,.gif" style="width:100%;">
+                    </div>
+                </div>
+                <div id="writeDetailPreview" style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;"></div>
             </div>
             <div class="write-form-group">
                 <label>갤러리 바탕색 (선택)</label>
@@ -845,13 +855,13 @@
         </div>
     </div>
 
-<script src="js/core.js?v=7"></script>
-<script src="js/navigation.js?v=7"></script>
-<script src="js/search.js?v=7"></script>
-<script src="js/viewer.js?v=7"></script>
-<script src="js/board.js?v=7"></script>
-<script src="js/features.js?v=7"></script>
-<script src="js/app.js?v=7"></script>
-<script src="js/admin.js?v=7"></script>
+<script src="js/core.js?v=8"></script>
+<script src="js/navigation.js?v=8"></script>
+<script src="js/search.js?v=8"></script>
+<script src="js/viewer.js?v=8"></script>
+<script src="js/board.js?v=8"></script>
+<script src="js/features.js?v=8"></script>
+<script src="js/app.js?v=8"></script>
+<script src="js/admin.js?v=8"></script>
 </body>
 </html>
