@@ -521,14 +521,6 @@
         /* 인라인 입력 */
         .tree-inline-input { padding: 4px 10px; border: 1px solid #ff6720; border-radius: 4px; font-size: 13px; outline: none; width: 200px; }
 
-        /* 업무 바로가기 그리드 */
-        .tool-grid { display: flex; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
-        .tool-card { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 20px; background: var(--card-bg); border-radius: 12px; box-shadow: var(--shadow); text-decoration: none; color: var(--text-primary); transition: all 0.2s; min-width: 90px; flex: 1; max-width: 140px; }
-        .tool-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.12); }
-        .tool-icon { width: 40px; height: 40px; border-radius: 10px; object-fit: contain; }
-        .tool-label { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
-        @media (max-width: 768px) { .tool-card { min-width: 70px; padding: 12px 10px; } .tool-icon { width: 32px; height: 32px; } .tool-label { font-size: 11px; } }
-
         /* 개선요청 폼 */
         .suggestion-form-card { background: var(--card-bg); border-radius: 12px; padding: 24px; box-shadow: var(--shadow); }
         .suggestion-textarea { width: 100%; padding: 16px; border: 2px solid var(--border-color); border-radius: 10px; font-size: 14px; font-family: inherit; resize: vertical; min-height: 120px; background: var(--main-bg); color: var(--text-primary); transition: border-color 0.2s; box-sizing: border-box; }
