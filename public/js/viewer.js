@@ -35,8 +35,9 @@ async function openProductDetail(post, catName) {
 
     // 1. 제품 설명 이미지 ([PRODUCT_DESC])
     if (post.content && post.content.startsWith('[PRODUCT_DESC]')) {
-        if (post.thumbnail) {
-            html += '<img src="/api/files/' + encodeURIComponent(post.thumbnail) + '" alt="' + post.title + '" style="max-width:100%; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.1); background:#fff;">';
+        var mainImg = post.detailImage || post.thumbnail;
+        if (mainImg) {
+            html += '<img src="/api/files/' + encodeURIComponent(mainImg) + '" alt="' + post.title + '" style="max-width:100%; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.1); background:#fff;">';
         }
         var descFiles = post.content.replace('[PRODUCT_DESC]', '').split('|');
         descFiles.forEach(function(f) {
@@ -78,7 +79,11 @@ async function openProductDetail(post, catName) {
             html += '</div>';
         }
     }
-    // 4. 썸네일 이미지만 있는 경우
+    // 4. 상세 이미지가 있는 경우 (detailImage 우선)
+    else if (post.detailImage) {
+        html += '<img src="/api/files/' + encodeURIComponent(post.detailImage) + '" alt="' + post.title + '" style="max-width:100%; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.1); background:#fff;">';
+    }
+    // 5. 썸네일 이미지만 있는 경우
     else if (post.thumbnail) {
         html += '<img src="/api/files/' + encodeURIComponent(post.thumbnail) + '" alt="' + post.title + '" style="max-width:100%; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.1); background:#fff;">';
     }

@@ -133,6 +133,11 @@ window.openWriteModal = async function(postId) {
         document.getElementById('writeContent').value = post.content || '';
         document.getElementById('writeFileStatus').textContent = post.fileName ? '기존 파일: ' + post.fileName : '';
         if (document.getElementById('writeBgColor')) document.getElementById('writeBgColor').value = post.bgColor || '#ffffff';
+        // 기존 썸네일/상세이미지 미리보기
+        var thumbPreview = document.getElementById('writeThumbPreview');
+        if (thumbPreview) thumbPreview.innerHTML = post.thumbnail ? '<img src="/api/files/' + post.thumbnail + '" style="max-height:80px; border-radius:6px; border:1px solid var(--border-color);"> <span style="font-size:12px; color:var(--text-light);">기존 썸네일</span>' : '';
+        var detailPreview = document.getElementById('writeDetailPreview');
+        if (detailPreview) detailPreview.innerHTML = post.detailImage ? '<img src="/api/files/' + post.detailImage + '" style="max-height:80px; border-radius:6px; border:1px solid var(--border-color);"> <span style="font-size:12px; color:var(--text-light);">기존 상세이미지</span>' : '';
     } else {
         title.textContent = '글쓰기';
         document.getElementById('writeTitle').value = '';
@@ -143,6 +148,11 @@ window.openWriteModal = async function(postId) {
         document.getElementById('writeFileStatus').textContent = '';
         if (document.getElementById('writeFile')) document.getElementById('writeFile').value = '';
         if (document.getElementById('writeThumb')) document.getElementById('writeThumb').value = '';
+        if (document.getElementById('writeDetailImage')) document.getElementById('writeDetailImage').value = '';
+        var thumbPreview2 = document.getElementById('writeThumbPreview');
+        if (thumbPreview2) thumbPreview2.innerHTML = '';
+        var detailPreview2 = document.getElementById('writeDetailPreview');
+        if (detailPreview2) detailPreview2.innerHTML = '';
     }
     toggleWriteFields();
     modal.classList.add('show');
@@ -199,10 +209,21 @@ window.submitWriteForm = async function() {
         if (!thumbData.error) thumbnail = thumbData.fileName;
     }
 
+    let detailImage = '';
+    const detailInput = document.getElementById('writeDetailImage');
+    if (detailInput && detailInput.files.length > 0) {
+        const formData3 = new FormData();
+        formData3.append('file', detailInput.files[0]);
+        const detailRes = await fetch('/api/upload', { method: 'POST', body: formData3 });
+        const detailData = await detailRes.json();
+        if (!detailData.error) detailImage = detailData.fileName;
+    }
+
     const bgColor = document.getElementById('writeBgColor') ? document.getElementById('writeBgColor').value : '';
     const postData = { boardId, categoryId, title, type, subInfo, url, content, bgColor };
     if (fileName) postData.fileName = fileName;
     if (thumbnail) postData.thumbnail = thumbnail;
+    if (detailImage) postData.detailImage = detailImage;
 
     if (adminEditPostId) {
         await api.put('/api/posts/' + adminEditPostId, postData);
