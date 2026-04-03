@@ -264,6 +264,9 @@ window.openPost = async function(id) {
 
         // 모든 게시물 → 하위 상세 페이지에서 표시
         await openProductDetail(post, catName);
+        // 히스토리에 게시물 상세 추가
+        navHistory.push({ type: 'post', page: post.boardId, cat: post.categoryId, postId: post.id });
+        backBtn.style.display = 'flex';
         loadDashboardWidgets();
         return;
 

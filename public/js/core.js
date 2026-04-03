@@ -54,3 +54,7 @@ function invalidateAll() { Object.keys(dataCache).forEach(k => delete dataCache[
 let currentUser = null;
 const pageNames = { 'dashboard': '🏠 홈', 'hr': '👥 인사정보', 'notices': '📢 공지사항', 'suggestions': '💡 개선요청', 'search-results': '🔍 검색 결과' };
 const backBtn = document.getElementById('backBtn');
+
+// 내부 히스토리 스택 (브라우저 히스토리와 별개로 직접 관리)
+var navHistory = [];
+var navHistoryLock = false;

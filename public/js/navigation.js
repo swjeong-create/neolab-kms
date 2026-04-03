@@ -88,12 +88,42 @@ async function navigateTo(pageId, pushToHistory = true, targetCatId = null) {
         }
         breadcrumb.innerHTML = crumbHtml;
     }
-    backBtn.style.display = pageId === 'dashboard' ? 'none' : 'flex';
-
-    if (pushToHistory) history.pushState({ page: pageId, cat: targetCatId }, '', `#${pageId}`);
+    if (pushToHistory) {
+        navHistory.push({ type: 'page', page: pageId, cat: targetCatId });
+        history.pushState({ page: pageId, cat: targetCatId }, '', `#${pageId}`);
+    }
+    backBtn.style.display = navHistory.length > 1 ? 'flex' : 'none';
     if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('mobile-show');
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+// 뒤로가기 버튼 클릭
+backBtn.addEventListener('click', function() {
+    if (navHistoryLock) return;
+    // 현재 게시물 상세가 열려있으면 먼저 닫기
+    var detailView = document.getElementById('productDetailView');
+    if (detailView && detailView.style.display !== 'none') {
+        closeProductDetail();
+        // 상세보기 히스토리 제거
+        if (navHistory.length > 0 && navHistory[navHistory.length - 1].type === 'post') {
+            navHistory.pop();
+        }
+        backBtn.style.display = navHistory.length > 1 ? 'flex' : 'none';
+        return;
+    }
+    // 이전 페이지로 이동
+    if (navHistory.length > 1) {
+        navHistory.pop(); // 현재 제거
+        var prev = navHistory[navHistory.length - 1]; // 이전
+        navHistoryLock = true;
+        navigateTo(prev.page, false, prev.cat);
+        navHistoryLock = false;
+        history.back();
+    } else {
+        navigateTo('dashboard', false);
+    }
+    backBtn.style.display = navHistory.length > 1 ? 'flex' : 'none';
+});
 
 document.getElementById('sidebar').addEventListener('click', function(e) {
     const submenuItem = e.target.closest('.submenu-item');
