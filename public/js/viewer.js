@@ -255,6 +255,12 @@ window.openPost = async function(id) {
         const post = await api.get(`/api/posts/${id}`);
         currentViewerPost = post;
 
+        // 인프라 게시물은 새 창으로 바로 열기
+        if (post.boardId === 'infra' && post.url) {
+            window.open(post.url, '_blank');
+            return;
+        }
+
         const categories = await cachedGet('/api/categories');
         let catName = '기타';
         if(categories[post.boardId]) {
