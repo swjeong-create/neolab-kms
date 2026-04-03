@@ -19,9 +19,15 @@ async function loadAdminPostTable() {
     }
 
     const selectedBoard = boardFilter.value;
+    const prevCat = catFilter.value;
     catFilter.innerHTML = '<option value="all">전체 카테고리</option>';
     if (selectedBoard !== 'all' && categories[selectedBoard]) {
         categories[selectedBoard].forEach(c => { const o = document.createElement('option'); o.value = c.id; o.textContent = c.name; catFilter.appendChild(o); });
+    }
+    // 이전 선택 복원 (옵션에 있으면)
+    if (prevCat && prevCat !== 'all') {
+        var hasOpt = Array.from(catFilter.options).some(function(o) { return o.value === prevCat; });
+        if (hasOpt) catFilter.value = prevCat;
     }
 
     let posts = await api.get('/api/posts');
