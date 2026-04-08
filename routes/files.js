@@ -6,7 +6,7 @@ const router = express.Router();
 const { writeLog } = require('../lib/logger');
 const { requireAuth, requireAdmin } = require('../lib/auth');
 const { getSheetData, updateRow, invalidateCache } = require('../lib/sheets');
-const { upload, uploadsDir, extractFileText, PDFParseClass } = require('../lib/upload');
+const { upload, uploadsDir, extractFileText, pdfParse } = require('../lib/upload');
 
 // 임시 공개 토큰 시스템
 const fileTokens = new Map();
@@ -38,7 +38,7 @@ router.post('/api/upload', requireAdmin, upload.single('file'), async (req, res)
     writeLog('ADMIN', `파일 업로드: ${req.file.originalname}`, `size=${req.file.size} by=${req.user.email}`);
 
     let extractedText = '';
-    if (PDFParseClass && req.file.filename.endsWith('.pdf')) {
+    if (pdfParse && req.file.filename.endsWith('.pdf')) {
         try {
             extractedText = await extractFileText(req.file.filename, req.file.originalname);
         } catch (err) {
