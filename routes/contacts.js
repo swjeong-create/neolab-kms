@@ -1,17 +1,36 @@
 const express = require('express');
 const router = express.Router();
+const path = require('path');
+const fs = require('fs');
 const { requireAuth, requireAdmin } = require('../lib/auth');
-const { getCached, getSheetData, appendRow, updateRow, updateColumn, deleteRow, invalidateCache } = require('../lib/sheets');
+const { getCached, getSheetData, appendRow, updateRow, deleteRow, invalidateCache } = require('../lib/sheets');
+
+// 순서 데이터를 로컬 JSON 파일에 저장 (Google Sheets API 쿼터 문제 회피)
+const ORDER_FILE = path.join(__dirname, '..', 'data', 'contacts-order.json');
+function loadOrder() {
+    try { return JSON.parse(fs.readFileSync(ORDER_FILE, 'utf8')); } catch(e) { return []; }
+}
+function saveOrder(orderList) {
+    const dir = path.dirname(ORDER_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(ORDER_FILE, JSON.stringify(orderList));
+}
 
 router.get('/api/contacts', requireAuth, async (req, res) => {
     try {
         const data = await getCached('contacts');
-        const sorted = data.map(({ _rowIndex, ...r }) => r).sort((a, b) => {
-            const oa = parseInt(a.order) || 9999;
-            const ob = parseInt(b.order) || 9999;
-            return oa - ob;
-        });
-        res.json(sorted);
+        const list = data.map(({ _rowIndex, ...r }) => r);
+        const order = loadOrder(); // [id1, id2, id3, ...]
+        if (order.length > 0) {
+            const orderMap = {};
+            order.forEach((id, i) => orderMap[id] = i);
+            list.sort((a, b) => {
+                const oa = orderMap[a.id] !== undefined ? orderMap[a.id] : 9999;
+                const ob = orderMap[b.id] !== undefined ? orderMap[b.id] : 9999;
+                return oa - ob;
+            });
+        }
+        res.json(list);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -24,8 +43,7 @@ router.post('/api/contacts', requireAdmin, async (req, res) => {
             dept: req.body.dept || '',
             phone: req.body.phone || '',
             email: req.body.email || '',
-            status: req.body.status || 'active',
-            order: req.body.order || ''
+            status: req.body.status || 'active'
         };
         await appendRow('contacts', contact);
         invalidateCache('contacts');
@@ -37,13 +55,9 @@ router.put('/api/contacts/reorder', requireAdmin, async (req, res) => {
     try {
         const { items } = req.body;
         if (!items || !Array.isArray(items)) return res.status(400).json({ error: 'items 배열이 필요합니다.' });
-        const data = await getSheetData('contacts');
-        // id→order 매핑
-        const orderMap = {};
-        for (const item of items) orderMap[item.id] = String(item.order);
-        // 시트 행 순서대로 order 값 배열 생성 (1회 API 호출)
-        const values = data.map(row => [orderMap[row.id] || row.order || '']);
-        await updateColumn('contacts', 'order', values);
+        // order 순으로 정렬 후 id 배열만 저장 (로컬 파일, API 호출 없음)
+        items.sort((a, b) => a.order - b.order);
+        saveOrder(items.map(i => i.id));
         invalidateCache('contacts');
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
