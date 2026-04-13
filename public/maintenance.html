@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeoLab KMS - 시스템 점검 중</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #f1f5f9 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .maintenance-container {
+            text-align: center;
+            padding: 40px 20px;
+            max-width: 520px;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+        }
+
+        .maintenance-card {
+            background: white;
+            border-radius: 24px;
+            padding: 56px 48px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .maintenance-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #ff6720, #ff884d, #ffb380);
+        }
+
+        .icon-area {
+            margin-bottom: 32px;
+            position: relative;
+        }
+
+        .gear-icon {
+            width: 88px;
+            height: 88px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .gear-icon svg {
+            width: 88px;
+            height: 88px;
+            animation: spin 8s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .wrench-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .wrench-icon svg {
+            width: 36px;
+            height: 36px;
+        }
+
+        .maintenance-title {
+            font-size: 26px;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+        }
+
+        .maintenance-subtitle {
+            font-size: 15px;
+            color: #64748b;
+            line-height: 1.7;
+            margin-bottom: 36px;
+        }
+
+        .status-box {
+            background: linear-gradient(135deg, #fff7ed, #fef3c7);
+            border: 1px solid #fed7aa;
+            border-radius: 16px;
+            padding: 20px 24px;
+            margin-bottom: 28px;
+        }
+
+        .status-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 14px;
+            color: #92400e;
+            font-weight: 600;
+        }
+
+        .pulse-dot {
+            width: 10px;
+            height: 10px;
+            background: #f59e0b;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        .info-text {
+            font-size: 13px;
+            color: #94a3b8;
+            line-height: 1.6;
+        }
+
+        .retry-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 28px;
+            padding: 12px 28px;
+            background: linear-gradient(135deg, #ff6720, #ff884d);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+
+        .retry-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(255, 103, 32, 0.3);
+        }
+
+        .retry-btn svg {
+            width: 16px;
+            height: 16px;
+            transition: transform 0.3s;
+        }
+
+        .retry-btn:hover svg {
+            transform: rotate(180deg);
+        }
+
+        .logo-footer {
+            margin-top: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #cbd5e1;
+            font-weight: 600;
+        }
+
+        .logo-footer .mini-logo {
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #ff6720, #ff884d);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-footer .mini-logo svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        /* 배경 장식 */
+        .bg-circle {
+            position: fixed;
+            border-radius: 50%;
+            opacity: 0.04;
+            z-index: 0;
+        }
+
+        .bg-circle-1 {
+            width: 400px; height: 400px;
+            background: #ff6720;
+            top: -100px; right: -100px;
+        }
+
+        .bg-circle-2 {
+            width: 300px; height: 300px;
+            background: #3b82f6;
+            bottom: -80px; left: -80px;
+        }
+
+        .bg-circle-3 {
+            width: 200px; height: 200px;
+            background: #8b5cf6;
+            top: 50%; left: 10%;
+        }
+
+        @media (max-width: 480px) {
+            .maintenance-card { padding: 40px 28px; border-radius: 20px; }
+            .maintenance-title { font-size: 22px; }
+            .gear-icon, .gear-icon svg { width: 72px; height: 72px; }
+            .wrench-icon svg { width: 30px; height: 30px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-circle bg-circle-1"></div>
+    <div class="bg-circle bg-circle-2"></div>
+    <div class="bg-circle bg-circle-3"></div>
+
+    <div class="maintenance-container">
+        <div class="maintenance-card">
+            <div class="icon-area">
+                <div class="gear-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#ff6720" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                </div>
+            </div>
+
+            <h1 class="maintenance-title">시스템 점검 중입니다</h1>
+            <p class="maintenance-subtitle">
+                더 나은 서비스를 위해 시스템 점검을 진행하고 있습니다.<br>
+                잠시 후 다시 접속해 주세요.
+            </p>
+
+            <div class="status-box">
+                <div class="status-row">
+                    <span class="pulse-dot"></span>
+                    점검 작업 진행 중
+                </div>
+            </div>
+
+            <p class="info-text">
+                점검이 완료되면 자동으로 접속됩니다.<br>
+                문의사항은 관리자에게 연락해 주세요.
+            </p>
+
+            <button class="retry-btn" onclick="checkAndRetry()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                </svg>
+                다시 접속하기
+            </button>
+
+            <div class="logo-footer">
+                <span class="mini-logo">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                </span>
+                NeoLab KMS
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 자동 체크: 30초마다 점검 해제됐는지 확인
+        async function checkMaintenance() {
+            try {
+                var res = await fetch('/api/maintenance-status');
+                var data = await res.json();
+                if (!data.maintenance) {
+                    window.location.href = '/';
+                }
+            } catch(e) { /* 무시 */ }
+        }
+
+        function checkAndRetry() {
+            var btn = document.querySelector('.retry-btn');
+            btn.textContent = '확인 중...';
+            btn.disabled = true;
+            checkMaintenance().then(function() {
+                setTimeout(function() {
+                    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg> 다시 접속하기';
+                    btn.disabled = false;
+                }, 1500);
+            });
+        }
+
+        // 30초마다 자동 확인
+        setInterval(checkMaintenance, 30000);
+    </script>
+</body>
+</html>

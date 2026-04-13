@@ -10,6 +10,7 @@ const { writeLog, logsDir } = require('./lib/logger');
 const { initSheets } = require('./lib/sheets');
 const { setupPassport } = require('./lib/passport-setup');
 const { uploadsDir, backupDir } = require('./lib/upload');
+const { getMaintenanceMode, isAdminEmail } = require('./lib/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -74,17 +75,40 @@ app.use(require('./routes/chat'));
 app.use(require('./routes/backup'));
 app.use(require('./routes/suggestions'));
 
+// ─── 점검 상태 확인 API (인증 불필요) ───
+app.get('/api/maintenance-status', (req, res) => {
+    res.json({ maintenance: getMaintenanceMode() });
+});
+
 // ─── 정적 파일 서빙 ───
 app.get('/login.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
-app.use((req, res, next) => {
+app.get('/maintenance.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'maintenance.html'));
+});
+
+app.use(async (req, res, next) => {
+    // API/인증 경로는 기존 로직 유지
     if (req.path.startsWith('/api/') || req.path.startsWith('/auth/')) return next();
+
+    // 미인증 사용자 → 로그인 페이지
     if (!req.isAuthenticated()) {
         if (req.accepts('html')) return res.redirect('/login.html');
         return res.status(401).json({ error: 'Not authenticated' });
     }
+
+    // 점검 모드: 관리자가 아니면 점검 페이지로
+    if (getMaintenanceMode()) {
+        const admin = await isAdminEmail(req.user.email);
+        if (!admin) {
+            // CSS/JS 등 정적 파일은 점검 페이지에서 필요하므로 허용
+            if (req.path.match(/\.(css|js|png|jpg|ico|svg|woff|woff2|ttf)$/)) return next();
+            return res.redirect('/maintenance.html');
+        }
+    }
+
     next();
 });
 
