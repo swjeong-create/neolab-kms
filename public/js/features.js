@@ -285,81 +285,127 @@ async function loadContacts() {
 }
 
 /* ==========================================
-   조직도 (인터랙티브 트리)
+   조직도 (2D 캔버스 — 자유 배치 + 연결선)
 ========================================== */
-var _orgChartScale = 1;
-
-function buildOrgTree(data) {
-    var map = {};
-    var roots = [];
-    data.forEach(function(n) { map[n.id] = { ...n, children: [] }; });
-    data.forEach(function(n) {
-        if (n.parentId && map[n.parentId]) {
-            map[n.parentId].children.push(map[n.id]);
-        } else {
-            roots.push(map[n.id]);
-        }
-    });
-    // 자식 정렬
-    function sortChildren(node) {
-        node.children.sort(function(a, b) { return (parseInt(a.order)||999) - (parseInt(b.order)||999); });
-        node.children.forEach(sortChildren);
-    }
-    roots.sort(function(a, b) { return (parseInt(a.order)||999) - (parseInt(b.order)||999); });
-    roots.forEach(sortChildren);
-    return roots;
-}
-
-function renderOrgNode(node) {
-    var isDept = !node.title && node.children.length > 0;
-    var html = '<li>';
-    if (isDept) {
-        html += '<div class="org-node org-dept-node">';
-        html += '<div class="org-dept-label">' + escapeHtml(node.name) + '</div>';
-        html += '</div>';
-    } else if (!node.title && node.children.length === 0 && node.department) {
-        // 부서 노드지만 하위가 없는 경우
-        html += '<div class="org-node org-dept-node">';
-        html += '<div class="org-dept-label">' + escapeHtml(node.name) + '</div>';
-        html += '</div>';
-    } else {
-        html += '<div class="org-node org-person-node">';
-        if (node.department) html += '<div class="org-person-dept">' + escapeHtml(node.department) + '</div>';
-        html += '<div class="org-person-name">' + escapeHtml(node.name) + '</div>';
-        if (node.title) html += '<div class="org-person-title">' + escapeHtml(node.title) + '</div>';
-        html += '</div>';
-    }
-    if (node.children.length > 0) {
-        // 부서 하위의 사람만 있는 경우와 혼합 분리
-        var deptChildren = node.children.filter(function(c) { return !c.title || c.children.length > 0; });
-        var personChildren = node.children.filter(function(c) { return c.title && c.children.length === 0; });
-
-        if (personChildren.length > 0) {
-            html += '<ul><li><div class="org-members-group">';
-            personChildren.forEach(function(p) {
-                html += '<div class="org-node org-person-node org-member-card">';
-                html += '<div class="org-person-name">' + escapeHtml(p.name) + '</div>';
-                if (p.title) html += '<div class="org-person-title">' + escapeHtml(p.title) + '</div>';
-                html += '</div>';
-            });
-            html += '</div></li>';
-            deptChildren.forEach(function(c) { html += renderOrgNode(c); });
-            html += '</ul>';
-        } else {
-            html += '<ul>';
-            node.children.forEach(function(c) { html += renderOrgNode(c); });
-            html += '</ul>';
-        }
-    }
-    html += '</li>';
-    return html;
-}
+var _orgScale = 1;
+var _orgPanX = 0, _orgPanY = 0;
+var _orgIsPanning = false, _orgPanStartX = 0, _orgPanStartY = 0;
+var _orgNodes = []; // 현재 로드된 노드 데이터
+var _orgIsAdmin = false;
+var _orgDragNode = null, _orgDragOffX = 0, _orgDragOffY = 0;
+var _orgSaveTimer = null;
+var NODE_W = 130, NODE_H = 52;
 
 function escapeHtml(str) {
     if (!str) return '';
     return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// 트리 구조 빌드 (자동 레이아웃용)
+function _orgBuildTree(data) {
+    var map = {};
+    var roots = [];
+    data.forEach(function(n) { map[n.id] = Object.assign({}, n, { children: [] }); });
+    data.forEach(function(n) {
+        if (n.parentId && map[n.parentId]) map[n.parentId].children.push(map[n.id]);
+        else roots.push(map[n.id]);
+    });
+    function sortC(node) {
+        node.children.sort(function(a,b){ return (parseInt(a.order)||999)-(parseInt(b.order)||999); });
+        node.children.forEach(sortC);
+    }
+    roots.sort(function(a,b){ return (parseInt(a.order)||999)-(parseInt(b.order)||999); });
+    roots.forEach(sortC);
+    return { roots: roots, map: map };
+}
+
+// 자동 레이아웃: 트리를 x,y 좌표로 배치
+function _orgAutoLayout(data) {
+    var tree = _orgBuildTree(data);
+    var gapX = 160, gapY = 90;
+    var xCounter = { val: 40 };
+
+    function layout(node, depth) {
+        if (node.children.length === 0) {
+            node.x = xCounter.val;
+            node.y = depth * gapY + 40;
+            xCounter.val += gapX;
+        } else {
+            node.children.forEach(function(c) { layout(c, depth + 1); });
+            var firstX = node.children[0].x;
+            var lastX = node.children[node.children.length - 1].x;
+            node.x = Math.round((firstX + lastX) / 2);
+            node.y = depth * gapY + 40;
+        }
+    }
+    tree.roots.forEach(function(r, i) { layout(r, 0); });
+
+    // 플랫 리스트로 반환
+    var result = [];
+    function collect(node) {
+        var d = data.find(function(n){ return n.id === node.id; });
+        result.push(Object.assign({}, d, { x: String(node.x), y: String(node.y) }));
+        node.children.forEach(collect);
+    }
+    tree.roots.forEach(collect);
+    return result;
+}
+
+// SVG 연결선 그리기
+function _orgDrawLines(svgEl, data) {
+    var html = '';
+    data.forEach(function(node) {
+        if (!node.parentId) return;
+        var parent = data.find(function(p){ return p.id === node.parentId; });
+        if (!parent) return;
+        var px = parseInt(parent.x)||0, py = parseInt(parent.y)||0;
+        var cx = parseInt(node.x)||0, cy = parseInt(node.y)||0;
+        var x1 = px + NODE_W/2, y1 = py + NODE_H;
+        var x2 = cx + NODE_W/2, y2 = cy;
+        var midY = Math.round((y1 + y2) / 2);
+        html += '<path d="M'+x1+','+y1+' L'+x1+','+midY+' L'+x2+','+midY+' L'+x2+','+y2+'" fill="none" stroke="#94a3b8" stroke-width="1.5"/>';
+    });
+    svgEl.innerHTML = html;
+}
+
+// 노드 HTML 생성
+function _orgRenderNodes(container, data, editable) {
+    var html = '';
+    data.forEach(function(node) {
+        var isDept = !node.title;
+        var x = parseInt(node.x)||0, y = parseInt(node.y)||0;
+        var cls = isDept ? 'orgc-dept' : 'orgc-person';
+
+        html += '<div class="orgc-node ' + cls + '" data-id="' + node.id + '" style="left:'+x+'px; top:'+y+'px; width:'+NODE_W+'px;"';
+        if (editable) html += ' onmousedown="orgNodeMouseDown(event, \'' + node.id + '\')"';
+        html += '>';
+        if (isDept) {
+            html += '<div class="orgc-dept-name">' + escapeHtml(node.name) + '</div>';
+        } else {
+            html += '<div class="orgc-p-name">' + escapeHtml(node.name) + '</div>';
+            html += '<div class="orgc-p-title">' + escapeHtml(node.title) + '</div>';
+        }
+        html += '</div>';
+    });
+    // 기존 SVG는 유지하고 노드만 교체
+    var oldSvg = container.querySelector('svg');
+    container.innerHTML = html;
+    if (oldSvg) container.insertBefore(oldSvg, container.firstChild);
+}
+
+// 캔버스 크기 계산
+function _orgCalcCanvasSize(data) {
+    var maxX = 800, maxY = 400;
+    data.forEach(function(n) {
+        var x = (parseInt(n.x)||0) + NODE_W + 50;
+        var y = (parseInt(n.y)||0) + NODE_H + 50;
+        if (x > maxX) maxX = x;
+        if (y > maxY) maxY = y;
+    });
+    return { w: maxX, h: maxY };
+}
+
+// ─── 메인 로드 함수 ───
 async function loadOrgChart() {
     try {
         var data = await cachedGet('/api/orgchart');
@@ -367,27 +413,140 @@ async function loadOrgChart() {
         if (!canvas) return;
 
         if (!data || data.length === 0) {
-            canvas.innerHTML = '<div style="text-align:center; padding:60px 20px; color:var(--text-light);"><div style="font-size:48px; margin-bottom:16px;">🏢</div><p style="font-size:16px;">조직도가 등록되지 않았습니다.</p><p style="font-size:13px;">관리자 모드에서 Excel 파일로 등록해주세요.</p></div>';
+            canvas.innerHTML = '<div style="text-align:center; padding:60px 20px; color:var(--text-light);"><div style="font-size:48px; margin-bottom:16px;">🏢</div><p style="font-size:16px;">조직도가 등록되지 않았습니다.</p><p style="font-size:13px;">관리자 모드에서 Excel로 등록해주세요.</p></div>';
             return;
         }
 
-        var tree = buildOrgTree(data);
-        var html = '<div class="org-tree"><ul>';
-        tree.forEach(function(root) { html += renderOrgNode(root); });
-        html += '</ul></div>';
-        canvas.innerHTML = html;
+        // 좌표가 없으면 자동 레이아웃
+        var hasCoords = data.some(function(n){ return n.x && n.y; });
+        if (!hasCoords) data = _orgAutoLayout(data);
+        _orgNodes = data;
+
+        var size = _orgCalcCanvasSize(data);
+        canvas.style.width = size.w + 'px';
+        canvas.style.height = size.h + 'px';
+        canvas.style.position = 'relative';
+
+        // SVG 레이어 (연결선)
+        canvas.innerHTML = '<svg style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0;"></svg>';
+        var svg = canvas.querySelector('svg');
+        _orgDrawLines(svg, data);
+
+        // 노드 레이어
+        _orgRenderNodes(canvas, data, false);
     } catch(e) { console.error('조직도 로드 오류:', e); }
 }
 
+// ─── 줌/팬 ───
 window.orgChartZoom = function(factor) {
-    _orgChartScale = Math.max(0.3, Math.min(2, _orgChartScale * factor));
+    _orgScale = Math.max(0.3, Math.min(2.5, _orgScale * factor));
     var canvas = document.getElementById('orgChartCanvas');
-    if (canvas) canvas.style.transform = 'scale(' + _orgChartScale + ')';
+    if (canvas) canvas.style.transform = 'scale(' + _orgScale + ')';
 };
 window.orgChartReset = function() {
-    _orgChartScale = 1;
+    _orgScale = 1; _orgPanX = 0; _orgPanY = 0;
     var canvas = document.getElementById('orgChartCanvas');
     if (canvas) canvas.style.transform = 'scale(1)';
+    var scroll = document.getElementById('orgChartScrollArea');
+    if (scroll) { scroll.scrollLeft = 0; scroll.scrollTop = 0; }
+};
+
+// ─── 관리자 캔버스 (드래그 이동 가능) ───
+async function loadAdminOrgCanvas() {
+    var data = await api.get('/api/orgchart');
+    var container = document.getElementById('adminOrgCanvas');
+    if (!container) return;
+
+    if (!data || data.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:60px; color:var(--text-light);">조직도 데이터가 없습니다.</div>';
+        return;
+    }
+
+    var hasCoords = data.some(function(n){ return n.x && n.y; });
+    if (!hasCoords) data = _orgAutoLayout(data);
+    _orgNodes = data;
+    _orgIsAdmin = true;
+
+    var size = _orgCalcCanvasSize(data);
+    container.style.width = Math.max(size.w, 1200) + 'px';
+    container.style.height = Math.max(size.h, 600) + 'px';
+    container.style.position = 'relative';
+
+    container.innerHTML = '<svg style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0;"></svg>';
+    var svg = container.querySelector('svg');
+    _orgDrawLines(svg, data);
+    _orgRenderNodes(container, data, true);
+}
+
+// 노드 드래그 시작
+window.orgNodeMouseDown = function(e, nodeId) {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    var el = e.currentTarget;
+    _orgDragNode = { id: nodeId, el: el };
+    var rect = el.getBoundingClientRect();
+    _orgDragOffX = e.clientX - rect.left;
+    _orgDragOffY = e.clientY - rect.top;
+    el.style.zIndex = '100';
+    el.style.boxShadow = '0 8px 24px rgba(0,0,0,0.2)';
+    el.style.cursor = 'grabbing';
+
+    document.addEventListener('mousemove', _orgNodeMouseMove);
+    document.addEventListener('mouseup', _orgNodeMouseUp);
+};
+
+function _orgNodeMouseMove(e) {
+    if (!_orgDragNode) return;
+    var container = document.getElementById('adminOrgCanvas');
+    var scrollArea = container.parentElement;
+    var contRect = container.getBoundingClientRect();
+    var newX = Math.max(0, Math.round((e.clientX - contRect.left + scrollArea.scrollLeft - _orgDragOffX)));
+    var newY = Math.max(0, Math.round((e.clientY - contRect.top + scrollArea.scrollTop - _orgDragOffY)));
+    // 그리드 스냅 (10px)
+    newX = Math.round(newX / 10) * 10;
+    newY = Math.round(newY / 10) * 10;
+    _orgDragNode.el.style.left = newX + 'px';
+    _orgDragNode.el.style.top = newY + 'px';
+    // 실시간 연결선 업데이트
+    var node = _orgNodes.find(function(n){ return n.id === _orgDragNode.id; });
+    if (node) { node.x = String(newX); node.y = String(newY); }
+    var svg = container.querySelector('svg');
+    if (svg) _orgDrawLines(svg, _orgNodes);
+}
+
+function _orgNodeMouseUp(e) {
+    if (!_orgDragNode) return;
+    _orgDragNode.el.style.zIndex = '1';
+    _orgDragNode.el.style.boxShadow = '';
+    _orgDragNode.el.style.cursor = '';
+    // 위치 저장 (디바운스)
+    clearTimeout(_orgSaveTimer);
+    _orgSaveTimer = setTimeout(_orgSavePositions, 1500);
+    _orgDragNode = null;
+    document.removeEventListener('mousemove', _orgNodeMouseMove);
+    document.removeEventListener('mouseup', _orgNodeMouseUp);
+}
+
+function _orgSavePositions() {
+    var updates = _orgNodes.map(function(n) { return { id: n.id, x: n.x||'0', y: n.y||'0' }; });
+    api.put('/api/orgchart/save-positions', { updates: updates }).then(function() {
+        invalidate('/api/orgchart');
+    }).catch(function(e) { console.error('위치 저장 실패:', e); });
+}
+
+// 자동 정렬 버튼
+window.orgAutoArrange = async function() {
+    var data = await api.get('/api/orgchart');
+    if (!data || data.length === 0) return;
+    var laid = _orgAutoLayout(data);
+    _orgNodes = laid;
+    var updates = laid.map(function(n) { return { id: n.id, x: n.x, y: n.y }; });
+    await api.put('/api/orgchart/save-positions', { updates: updates });
+    invalidate('/api/orgchart');
+    await loadAdminOrgCanvas();
+    await loadOrgChart();
+    alert('자동 정렬 완료!');
 };
 
 /* ==========================================

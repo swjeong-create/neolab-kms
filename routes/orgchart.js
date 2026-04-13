@@ -50,6 +50,28 @@ router.put('/api/orgchart/reorder', requireAdmin, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// 노드 위치(x,y) 일괄 저장
+router.put('/api/orgchart/save-positions', requireAdmin, async (req, res) => {
+    try {
+        const { updates } = req.body;
+        if (!Array.isArray(updates)) return res.status(400).json({ error: '잘못된 요청입니다.' });
+        const data = await getSheetData('orgchart');
+        const promises = [];
+        for (const upd of updates) {
+            const row = data.find(r => r.id === upd.id);
+            if (row) {
+                let changed = false;
+                if (upd.x !== undefined && row.x !== String(upd.x)) { row.x = String(upd.x); changed = true; }
+                if (upd.y !== undefined && row.y !== String(upd.y)) { row.y = String(upd.y); changed = true; }
+                if (changed) promises.push(updateRow('orgchart', row._rowIndex, row));
+            }
+        }
+        if (promises.length > 0) await Promise.all(promises);
+        invalidateCache('orgchart');
+        res.json({ success: true, updated: promises.length });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 router.put('/api/orgchart/:id', requireAdmin, async (req, res) => {
     try {
         const data = await getSheetData('orgchart');
@@ -137,6 +159,7 @@ router.post('/api/orgchart/bulk', requireAdmin, async (req, res) => {
                 level: '1',
                 parentId: parentDept ? ('__dept__' + parentDept) : '',
                 order: '0',
+                x: '', y: '',
                 _isDept: true,
                 _parentDeptName: parentDept
             });
@@ -177,6 +200,7 @@ router.post('/api/orgchart/bulk', requireAdmin, async (req, res) => {
                 level: personLevel,
                 parentId: parentNodeId,
                 order: String(idx + 1),
+                x: '', y: '',
                 _isDept: false
             });
         });

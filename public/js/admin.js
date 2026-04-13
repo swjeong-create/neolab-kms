@@ -1760,6 +1760,8 @@ async function loadAdminOrgChart() {
     try {
         var data = await api.get('/api/orgchart');
         renderAdminOrgTree(data);
+        // 캔버스도 로드
+        if (typeof loadAdminOrgCanvas === 'function') loadAdminOrgCanvas();
     } catch(e) { console.error(e); }
 }
 

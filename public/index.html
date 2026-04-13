@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=39">
+    <link rel="stylesheet" href="css/style.css?v=40">
     <!-- CSS is loaded from css/style.css -->
 </head>
 <body>
@@ -694,13 +694,20 @@
                     <div id="orgExcelPreview" style="display:none; margin-bottom:20px; max-height:300px; overflow:auto; border:1px solid var(--border-color); border-radius:8px;"></div>
 
                     <hr style="margin:24px 0; border:none; border-top:1px solid var(--border-color);">
-                    <h3 style="margin-bottom:8px;">🌳 조직도 편집</h3>
-                    <p style="font-size:13px; color:var(--text-light); margin-bottom:16px;">노드를 드래그하여 다른 부서 아래로 이동할 수 있습니다. 변경 시 자동 저장됩니다.</p>
-                    <div style="margin-bottom:12px; display:flex; gap:8px; flex-wrap:wrap;">
+                    <h3 style="margin-bottom:8px;">🌳 조직도 캔버스</h3>
+                    <p style="font-size:13px; color:var(--text-light); margin-bottom:12px;">노드를 드래그하여 자유롭게 위치를 배치하세요. 놓으면 자동 저장됩니다.</p>
+                    <div style="margin-bottom:12px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
                         <button type="button" class="admin-btn admin-btn-outline admin-btn-small" onclick="showAddNodeDialog('dept')">+ 부서 추가</button>
                         <button type="button" class="admin-btn admin-btn-outline admin-btn-small" onclick="showAddNodeDialog('person')">+ 인원 추가</button>
+                        <button type="button" class="admin-btn admin-btn-outline admin-btn-small" onclick="orgAutoArrange()">📐 자동 정렬</button>
+                        <span style="margin-left:auto; font-size:12px; color:var(--text-light);">노드를 마우스로 드래그하여 위치 변경</span>
                     </div>
-                    <div id="adminOrgTreeContainer" style="overflow:auto; min-height:200px; background:var(--main-bg); border-radius:12px; padding:20px; border:1px solid var(--border-color);"></div>
+                    <div id="adminOrgCanvasWrap" style="overflow:auto; height:500px; background:var(--main-bg); border-radius:12px; border:1px solid var(--border-color); position:relative;">
+                        <div id="adminOrgCanvas" style="position:relative; min-width:1200px; min-height:600px;"></div>
+                    </div>
+                    <hr style="margin:20px 0; border:none; border-top:1px solid var(--border-color);">
+                    <h3 style="margin-bottom:8px;">📋 데이터 목록</h3>
+                    <div id="adminOrgTreeContainer" style="overflow:auto; max-height:300px; background:var(--main-bg); border-radius:12px; padding:12px; border:1px solid var(--border-color);"></div>
                 </div>
                 
                 <div class="admin-tab-content" id="suggestionsAdminTab">
@@ -994,13 +1001,13 @@
     </div>
 
 <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
-<script src="js/core.js?v=39"></script>
-<script src="js/navigation.js?v=39"></script>
-<script src="js/search.js?v=39"></script>
-<script src="js/viewer.js?v=39"></script>
-<script src="js/board.js?v=39"></script>
-<script src="js/features.js?v=39"></script>
-<script src="js/app.js?v=39"></script>
-<script src="js/admin.js?v=39"></script>
+<script src="js/core.js?v=40"></script>
+<script src="js/navigation.js?v=40"></script>
+<script src="js/search.js?v=40"></script>
+<script src="js/viewer.js?v=40"></script>
+<script src="js/board.js?v=40"></script>
+<script src="js/features.js?v=40"></script>
+<script src="js/app.js?v=40"></script>
+<script src="js/admin.js?v=40"></script>
 </body>
 </html>
