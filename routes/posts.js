@@ -62,12 +62,6 @@ router.post('/api/posts', requireAdmin, async (req, res) => {
             content = await extractFileText(req.body.fileName, req.body.title);
         }
 
-        // 이미지/PDF 파일에서 OCR 텍스트 자동 추출
-        const ocrText = await extractOcrFromFiles(
-            [req.body.thumbnail, req.body.detailImage, req.body.fileName],
-            req.body.title
-        );
-
         const post = {
             id: String(maxId + 1),
             boardId: req.body.boardId || '',
@@ -81,12 +75,31 @@ router.post('/api/posts', requireAdmin, async (req, res) => {
             fileName: req.body.fileName || '',
             views: '0',
             date: new Date().toISOString().split('T')[0],
-            ocrText: ocrText
+            ocrText: ''
         };
         await appendRow('posts', post);
         invalidateCache('posts');
         writeLog('ADMIN', `게시물 추가: ${post.title}`, `id=${post.id} by=${req.user.email}`);
         res.json({ success: true, id: post.id });
+
+        // 백그라운드에서 OCR 추출 후 업데이트
+        extractOcrFromFiles(
+            [req.body.thumbnail, req.body.detailImage, req.body.fileName],
+            req.body.title
+        ).then(async (ocrText) => {
+            if (ocrText) {
+                try {
+                    const freshData = await getSheetData('posts');
+                    const freshRow = freshData.find(p => p.id === post.id);
+                    if (freshRow) {
+                        freshRow.ocrText = ocrText;
+                        await updateRow('posts', freshRow._rowIndex, freshRow);
+                        invalidateCache('posts');
+                        writeLog('INFO', `OCR 백그라운드 완료: ${post.title}`, `id=${post.id}, ${ocrText.length}자`);
+                    }
+                } catch(e) { writeLog('ERROR', `OCR 백그라운드 실패: ${post.title}`, e.message); }
+            }
+        }).catch(e => { writeLog('ERROR', `OCR 추출 실패: ${post.title}`, e.message); });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -96,18 +109,31 @@ router.put('/api/posts/:id', requireAdmin, async (req, res) => {
         const row = data.find(p => p.id === req.params.id);
         if (!row) return res.status(404).json({ error: '게시물을 찾을 수 없습니다.' });
         const updated = { ...row, ...req.body, date: new Date().toISOString().split('T')[0] };
-        // 이미지/파일 변경 시 OCR 재추출
         const newFiles = [req.body.thumbnail, req.body.detailImage, req.body.fileName].join('|');
         const oldFiles = [row.thumbnail, row.detailImage, row.fileName].join('|');
-        if (newFiles !== oldFiles) {
-            updated.ocrText = await extractOcrFromFiles(
-                [updated.thumbnail, updated.detailImage, updated.fileName],
-                updated.title
-            );
-        }
+        const filesChanged = newFiles !== oldFiles;
         await updateRow('posts', row._rowIndex, updated);
         invalidateCache('posts');
         res.json({ success: true });
+
+        // 이미지/파일 변경 시 백그라운드에서 OCR 재추출
+        if (filesChanged) {
+            extractOcrFromFiles(
+                [updated.thumbnail, updated.detailImage, updated.fileName],
+                updated.title
+            ).then(async (ocrText) => {
+                try {
+                    const freshData = await getSheetData('posts');
+                    const freshRow = freshData.find(p => p.id === req.params.id);
+                    if (freshRow) {
+                        freshRow.ocrText = ocrText || '';
+                        await updateRow('posts', freshRow._rowIndex, freshRow);
+                        invalidateCache('posts');
+                        writeLog('INFO', `OCR 재추출 완료: ${updated.title}`, `id=${req.params.id}, ${(ocrText||'').length}자`);
+                    }
+                } catch(e) { writeLog('ERROR', `OCR 재추출 실패: ${updated.title}`, e.message); }
+            }).catch(e => { writeLog('ERROR', `OCR 추출 실패: ${updated.title}`, e.message); });
+        }
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
