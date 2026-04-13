@@ -467,15 +467,11 @@ window.uploadOrgChartExcel = async function() {
     reader.readAsArrayBuffer(file);
 };
 
-// 관리자 조직도 트리 렌더링
-function renderAdminOrgTree(data) {
-    var container = document.getElementById('adminOrgTreeContainer');
-    if (!container) return;
-    if (!data || data.length === 0) {
-        container.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-light);">조직도 데이터가 없습니다. Excel 파일을 업로드해주세요.</div>';
-        return;
-    }
+// 관리자 조직도 트리 — 플랫 리스트로 변환 후 렌더링
+var _orgFlatList = []; // [{id, name, title, department, parentId, order, depth, isDept}, ...]
+var _orgMoving = false;
 
+function buildOrgFlatList(data) {
     var map = {};
     var roots = [];
     data.forEach(function(n) { map[n.id] = { ...n, children: [] }; });
@@ -493,63 +489,223 @@ function renderAdminOrgTree(data) {
     roots.sort(function(a,b) { return (parseInt(a.order)||999) - (parseInt(b.order)||999); });
     roots.forEach(sortKids);
 
-    function renderNode(node, depth) {
-        var indent = depth * 24;
-        var isDept = (!node.title && node.children.length > 0) || (!node.title && !node.department);
-        var icon = isDept ? '🏢' : '👤';
-        var label = isDept ? node.name : (node.name + (node.title ? ' (' + node.title + ')' : ''));
-        var deptBadge = (!isDept && node.department) ? '<span style="font-size:11px; background:#e0f2fe; color:#0369a1; padding:1px 6px; border-radius:4px; margin-left:6px;">' + node.department + '</span>' : '';
-
-        var html = '<div class="admin-org-node" draggable="true" data-id="' + node.id + '" data-parent="' + (node.parentId||'') + '" style="display:flex; align-items:center; gap:8px; padding:8px 12px; margin:2px 0; margin-left:' + indent + 'px; background:' + (isDept ? '#f0f9ff' : 'white') + '; border:1px solid var(--border-color); border-radius:8px; cursor:grab; transition:background 0.15s;" ondragstart="orgDragStart(event)" ondragover="orgDragOver(event)" ondrop="orgDrop(event)" ondragend="orgDragEnd(event)">';
-        html += '<span style="cursor:grab; opacity:0.4;">⠿</span>';
-        html += '<span>' + icon + '</span>';
-        html += '<span style="flex:1; font-size:14px; font-weight:' + (isDept ? '600' : '400') + ';">' + label + deptBadge + '</span>';
-        html += '<button type="button" onclick="deleteOrgNode(\'' + node.id + '\')" style="background:none; border:none; cursor:pointer; color:#ef4444; font-size:16px; padding:2px 6px;" title="삭제">×</button>';
-        html += '</div>';
-        node.children.forEach(function(c) { html += renderNode(c, depth + 1); });
-        return html;
+    var flat = [];
+    function flatten(node, depth) {
+        var isDept = !node.title && (node.children.length > 0 || !node.department || node.name === node.department);
+        flat.push({ id: node.id, name: node.name, title: node.title||'', department: node.department||'', parentId: node.parentId||'', order: node.order||'0', depth: depth, isDept: isDept });
+        node.children.forEach(function(c) { flatten(c, depth + 1); });
     }
+    roots.forEach(function(r) { flatten(r, 0); });
+    return flat;
+}
+
+function renderAdminOrgTree(data) {
+    var container = document.getElementById('adminOrgTreeContainer');
+    if (!container) return;
+    if (!data || data.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-light);">조직도 데이터가 없습니다. Excel 파일을 업로드해주세요.</div>';
+        _orgFlatList = [];
+        return;
+    }
+    _orgFlatList = buildOrgFlatList(data);
 
     var html = '';
-    roots.forEach(function(r) { html += renderNode(r, 0); });
+    _orgFlatList.forEach(function(node, idx) {
+        var indent = node.depth * 28;
+        var icon = node.isDept ? '🏢' : '👤';
+        var label = node.isDept ? node.name : (node.name + (node.title ? ' <span style="color:#64748b; font-weight:400;">' + node.title + '</span>' : ''));
+        var deptBadge = (!node.isDept && node.department) ? '<span style="font-size:10px; background:#e0f2fe; color:#0369a1; padding:1px 6px; border-radius:4px; margin-left:4px;">' + node.department + '</span>' : '';
+        var bgColor = node.isDept ? '#f0f9ff' : 'white';
+
+        html += '<div class="admin-org-row" data-idx="' + idx + '" data-id="' + node.id + '" draggable="true" style="display:flex; align-items:center; gap:6px; padding:7px 10px; margin:1px 0; margin-left:' + indent + 'px; background:' + bgColor + '; border:1px solid var(--border-color); border-radius:8px; transition:all 0.15s; cursor:grab;" ondragstart="orgRowDragStart(event,' + idx + ')" ondragover="orgRowDragOver(event,' + idx + ')" ondragleave="orgRowDragLeave(event)" ondrop="orgRowDrop(event,' + idx + ')" ondragend="orgRowDragEnd(event)">';
+        // 드래그 핸들
+        html += '<span style="cursor:grab; opacity:0.3; font-size:12px; user-select:none;">⠿</span>';
+        // 아이콘
+        html += '<span style="font-size:14px;">' + icon + '</span>';
+        // 이름
+        html += '<span style="flex:1; font-size:13px; font-weight:' + (node.isDept ? '700' : '400') + ';">' + label + deptBadge + '</span>';
+        // 이동 버튼들
+        html += '<div style="display:flex; gap:2px;">';
+        html += '<button type="button" onclick="orgMoveUp(' + idx + ')" style="background:none; border:1px solid #e2e8f0; border-radius:4px; cursor:pointer; padding:1px 5px; font-size:11px; color:#64748b;" title="위로">▲</button>';
+        html += '<button type="button" onclick="orgMoveDown(' + idx + ')" style="background:none; border:1px solid #e2e8f0; border-radius:4px; cursor:pointer; padding:1px 5px; font-size:11px; color:#64748b;" title="아래로">▼</button>';
+        html += '<button type="button" onclick="orgIndentRight(' + idx + ')" style="background:none; border:1px solid #e2e8f0; border-radius:4px; cursor:pointer; padding:1px 5px; font-size:11px; color:#64748b;" title="하위로 이동">→</button>';
+        html += '<button type="button" onclick="orgIndentLeft(' + idx + ')" style="background:none; border:1px solid #e2e8f0; border-radius:4px; cursor:pointer; padding:1px 5px; font-size:11px; color:#64748b;" title="상위로 이동">←</button>';
+        html += '</div>';
+        // 삭제
+        html += '<button type="button" onclick="deleteOrgNode(\'' + node.id + '\')" style="background:none; border:none; cursor:pointer; color:#ef4444; font-size:14px; padding:0 4px;" title="삭제">×</button>';
+        html += '</div>';
+    });
     container.innerHTML = html;
 }
 
-// 드래그앤드롭
-var _orgDragId = null;
-window.orgDragStart = function(e) {
-    _orgDragId = e.currentTarget.dataset.id;
+// ─── 위/아래 이동 (같은 부모 내에서 순서 변경) ───
+window.orgMoveUp = async function(idx) {
+    if (_orgMoving || idx <= 0) return;
+    var node = _orgFlatList[idx];
+    // 같은 부모의 이전 형제 찾기
+    var siblings = _orgFlatList.filter(function(n) { return n.parentId === node.parentId; });
+    var sibIdx = siblings.findIndex(function(s) { return s.id === node.id; });
+    if (sibIdx <= 0) return;
+    await _orgSwapOrder(node.id, siblings[sibIdx - 1].id);
+};
+
+window.orgMoveDown = async function(idx) {
+    if (_orgMoving) return;
+    var node = _orgFlatList[idx];
+    var siblings = _orgFlatList.filter(function(n) { return n.parentId === node.parentId; });
+    var sibIdx = siblings.findIndex(function(s) { return s.id === node.id; });
+    if (sibIdx < 0 || sibIdx >= siblings.length - 1) return;
+    await _orgSwapOrder(node.id, siblings[sibIdx + 1].id);
+};
+
+async function _orgSwapOrder(idA, idB) {
+    if (_orgMoving) return;
+    _orgMoving = true;
+    try {
+        // 같은 부모 내 전체 순서 재할당
+        var nodeA = _orgFlatList.find(function(n) { return n.id === idA; });
+        var siblings = _orgFlatList.filter(function(n) { return n.parentId === nodeA.parentId; });
+        var ids = siblings.map(function(s) { return s.id; });
+        var posA = ids.indexOf(idA);
+        var posB = ids.indexOf(idB);
+        ids.splice(posA, 1);
+        ids.splice(posB, 0, idA);
+        var updates = ids.map(function(id, i) { return { id: id, order: String(i + 1) }; });
+        await api.put('/api/orgchart/reorder', { updates: updates });
+        invalidate('/api/orgchart');
+        await loadAdminOrgChart();
+        await loadOrgChart();
+    } finally { _orgMoving = false; }
+}
+
+// ─── 들여쓰기: 바로 위 항목의 자식으로 이동 ───
+window.orgIndentRight = async function(idx) {
+    if (_orgMoving || idx <= 0) return;
+    var node = _orgFlatList[idx];
+    // 같은 부모의 바로 위 형제를 찾아서 그 아래로
+    var siblings = _orgFlatList.filter(function(n) { return n.parentId === node.parentId; });
+    var sibIdx = siblings.findIndex(function(s) { return s.id === node.id; });
+    if (sibIdx <= 0) return;
+    var newParent = siblings[sibIdx - 1];
+    _orgMoving = true;
+    try {
+        await api.put('/api/orgchart/reorder', { updates: [{ id: node.id, parentId: newParent.id, order: '999' }] });
+        invalidate('/api/orgchart');
+        await loadAdminOrgChart();
+        await loadOrgChart();
+    } finally { _orgMoving = false; }
+};
+
+// ─── 내어쓰기: 부모의 부모 아래로 이동 ───
+window.orgIndentLeft = async function(idx) {
+    if (_orgMoving) return;
+    var node = _orgFlatList[idx];
+    if (!node.parentId) return; // 이미 최상위
+    var parent = _orgFlatList.find(function(n) { return n.id === node.parentId; });
+    var newParentId = parent ? (parent.parentId || '') : '';
+    _orgMoving = true;
+    try {
+        await api.put('/api/orgchart/reorder', { updates: [{ id: node.id, parentId: newParentId, order: '999' }] });
+        invalidate('/api/orgchart');
+        await loadAdminOrgChart();
+        await loadOrgChart();
+    } finally { _orgMoving = false; }
+};
+
+// ─── 드래그앤드롭 (위치 삽입) ───
+var _orgDragIdx = -1;
+
+window.orgRowDragStart = function(e, idx) {
+    _orgDragIdx = idx;
     e.currentTarget.style.opacity = '0.4';
     e.dataTransfer.effectAllowed = 'move';
 };
-window.orgDragOver = function(e) {
+
+window.orgRowDragOver = function(e, idx) {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-    e.currentTarget.style.background = '#fef3c7';
+    if (_orgDragIdx === idx) return;
+    // 삽입 위치 표시
+    var rect = e.currentTarget.getBoundingClientRect();
+    var midY = rect.top + rect.height / 2;
+    document.querySelectorAll('.admin-org-row').forEach(function(el) {
+        el.style.borderTop = '1px solid var(--border-color)';
+        el.style.borderBottom = '1px solid var(--border-color)';
+    });
+    if (e.clientY < midY) {
+        e.currentTarget.style.borderTop = '3px solid #ff6720';
+    } else {
+        e.currentTarget.style.borderBottom = '3px solid #ff6720';
+    }
 };
-window.orgDragEnd = function(e) {
+
+window.orgRowDragLeave = function(e) {
+    e.currentTarget.style.borderTop = '1px solid var(--border-color)';
+    e.currentTarget.style.borderBottom = '1px solid var(--border-color)';
+};
+
+window.orgRowDragEnd = function(e) {
     e.currentTarget.style.opacity = '1';
-    document.querySelectorAll('.admin-org-node').forEach(function(el) { el.style.background = ''; });
+    document.querySelectorAll('.admin-org-row').forEach(function(el) {
+        el.style.borderTop = '1px solid var(--border-color)';
+        el.style.borderBottom = '1px solid var(--border-color)';
+    });
+    _orgDragIdx = -1;
 };
-window.orgDrop = async function(e) {
+
+window.orgRowDrop = async function(e, targetIdx) {
     e.preventDefault();
-    var targetId = e.currentTarget.dataset.id;
-    if (!_orgDragId || _orgDragId === targetId) return;
-    // 자기 자식으로 이동 방지 (간단한 체크)
+    if (_orgDragIdx < 0 || _orgDragIdx === targetIdx || _orgMoving) return;
+    var dragNode = _orgFlatList[_orgDragIdx];
+    var targetNode = _orgFlatList[targetIdx];
+    if (!dragNode || !targetNode) return;
+
+    // 자기 자신의 자식으로 이동 방지
+    var checkId = targetNode.parentId;
+    while (checkId) {
+        if (checkId === dragNode.id) { alert('자신의 하위로는 이동할 수 없습니다.'); return; }
+        var p = _orgFlatList.find(function(n) { return n.id === checkId; });
+        checkId = p ? p.parentId : null;
+    }
+
+    // 타겟 노드의 부모 아래로 이동 (같은 레벨)
+    var rect = e.currentTarget.getBoundingClientRect();
+    var isAbove = e.clientY < rect.top + rect.height / 2;
+    var newParentId = targetNode.parentId;
+
+    _orgMoving = true;
     try {
-        await api.put('/api/orgchart/reorder', {
-            updates: [{ id: _orgDragId, parentId: targetId, order: '999' }]
-        });
+        // 먼저 parentId 변경
+        await api.put('/api/orgchart/reorder', { updates: [{ id: dragNode.id, parentId: newParentId, order: '0' }] });
+        // 형제 목록에서 순서 재조정
+        invalidate('/api/orgchart');
+        var freshData = await api.get('/api/orgchart');
+        var newSiblings = freshData.filter(function(n) { return n.parentId === newParentId; })
+            .sort(function(a,b) { return (parseInt(a.order)||999) - (parseInt(b.order)||999); });
+        var sibIds = newSiblings.map(function(s) { return s.id; });
+
+        // 드래그 노드를 타겟 기준으로 위치
+        var dragPosInSibs = sibIds.indexOf(dragNode.id);
+        if (dragPosInSibs >= 0) sibIds.splice(dragPosInSibs, 1);
+        var targetPosInSibs = sibIds.indexOf(targetNode.id);
+        if (targetPosInSibs < 0) {
+            sibIds.push(dragNode.id);
+        } else {
+            sibIds.splice(isAbove ? targetPosInSibs : targetPosInSibs + 1, 0, dragNode.id);
+        }
+
+        var updates = sibIds.map(function(id, i) { return { id: id, order: String(i + 1) }; });
+        await api.put('/api/orgchart/reorder', { updates: updates });
         invalidate('/api/orgchart');
         await loadAdminOrgChart();
         await loadOrgChart();
     } catch(err) { alert('이동 실패: ' + err.message); }
-    _orgDragId = null;
+    _orgMoving = false;
 };
 
+// ─── 삭제 ───
 window.deleteOrgNode = async function(id) {
     if (!confirm('이 항목을 삭제하시겠습니까?\n하위 항목도 함께 삭제됩니다.')) return;
-    // 하위 항목도 모두 삭제
     var data = await api.get('/api/orgchart');
     var toDelete = [id];
     function findChildren(parentId) {
@@ -567,22 +723,30 @@ window.deleteOrgNode = async function(id) {
     await loadOrgChart();
 };
 
+// ─── 노드 추가 ───
 window.showAddNodeDialog = function(type) {
     var name = prompt(type === 'dept' ? '부서명을 입력하세요:' : '이름을 입력하세요:');
     if (!name) return;
     var title = '';
     var department = '';
+    var parentId = '';
     if (type === 'person') {
         title = prompt('직책을 입력하세요 (예: 팀장, 사원):') || '';
-        department = prompt('소속 부서명을 입력하세요:') || '';
+        // 부서 목록 보여주기
+        var depts = _orgFlatList.filter(function(n) { return n.isDept; });
+        if (depts.length > 0) {
+            var deptNames = depts.map(function(d, i) { return (i+1) + '. ' + d.name; }).join('\n');
+            var deptChoice = prompt('소속 부서 번호를 선택하세요:\n' + deptNames);
+            if (deptChoice) {
+                var dIdx = parseInt(deptChoice) - 1;
+                if (depts[dIdx]) { parentId = depts[dIdx].id; department = depts[dIdx].name; }
+            }
+        }
     }
     api.post('/api/orgchart', {
-        name: name,
-        title: title,
-        department: department,
+        name: name, title: title, department: department,
         level: type === 'dept' ? '1' : '2',
-        parentId: '',
-        order: '999'
+        parentId: parentId, order: '999'
     }).then(function() {
         invalidate('/api/orgchart');
         loadAdminOrgChart();
