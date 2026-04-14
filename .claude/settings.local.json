@@ -146,7 +146,8 @@
       "Bash(python3 -V)",
       "Bash(python3 -c \"import fitz; print\\(fitz.__version__\\)\")",
       "Bash(python -c \"import fitz; print\\(fitz.__version__\\)\")",
-      "Bash(python -c \"import fitz; doc=fitz.open\\(r'G:\\\\공유 드라이브\\\\인사총무팀_인사\\\\00.기본정보\\\\1.조직도\\\\2026년\\\\조직도_20260301.pdf'\\); page=doc[0]; pix=page.get_pixmap\\(dpi=150\\); pix.save\\(r'C:\\\\Users\\\\NeoLAB\\\\Desktop\\\\cms\\\\orgchart_preview.png'\\); print\\('ok'\\)\")"
+      "Bash(python -c \"import fitz; doc=fitz.open\\(r'G:\\\\공유 드라이브\\\\인사총무팀_인사\\\\00.기본정보\\\\1.조직도\\\\2026년\\\\조직도_20260301.pdf'\\); page=doc[0]; pix=page.get_pixmap\\(dpi=150\\); pix.save\\(r'C:\\\\Users\\\\NeoLAB\\\\Desktop\\\\cms\\\\orgchart_preview.png'\\); print\\('ok'\\)\")",
+      "Bash(powershell -Command \"\\(Get-Content public\\\\index.html -Raw\\) -replace 'v=55', 'v=56' | Set-Content public\\\\index.html -NoNewline\")"
     ]
   }
 }
