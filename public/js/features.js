@@ -294,7 +294,7 @@ var _orgNodes = []; // 현재 로드된 노드 데이터
 var _orgIsAdmin = false;
 var _orgDragNode = null, _orgDragOffX = 0, _orgDragOffY = 0;
 var _orgSaveTimer = null;
-var NODE_W = 140, NODE_H = 56;
+var NODE_W = 128, NODE_H = 46;
 
 function escapeHtml(str) {
     if (!str) return '';
@@ -350,7 +350,7 @@ function _orgResolveOverlap(data) {
 // 자동 레이아웃: 트리를 x,y 좌표로 배치
 function _orgAutoLayout(data) {
     var tree = _orgBuildTree(data);
-    var gapX = 170, gapY = 105;
+    var gapX = 150, gapY = 90;
     var xCounter = { val: 40 };
 
     function layout(node, depth) {
