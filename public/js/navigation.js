@@ -187,8 +187,6 @@ document.getElementById('sidebar').addEventListener('click', function(e) {
             navigateTo('hr'); document.querySelector('#hr .tab[data-tab="contacts"]').click();
         } else if (action === 'goto-hr-org') {
             navigateTo('hr'); document.querySelector('#hr .tab[data-tab="orgchart"]').click();
-        } else if (action === 'goto-hr-suggestions') {
-            navigateTo('hr'); document.querySelector('#hr .tab[data-tab="suggestions"]').click();
         }
         return;
     }
