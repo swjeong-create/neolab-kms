@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=50">
+    <link rel="stylesheet" href="css/style.css?v=51">
     <!-- CSS is loaded from css/style.css -->
 </head>
 <body>
@@ -577,6 +577,11 @@
                             <input type="text" id="postSubInfo" placeholder="예: v1.0, 50만원, 인사팀 등">
                         </div>
                     </div>
+                    <div class="admin-form-group" id="postIconImageGroup">
+                        <label for="postIconImage">카드 아이콘 이미지 (선택, 이모지 대신 이미지 사용)</label>
+                        <input type="file" id="postIconImage" accept=".png,.jpg,.jpeg,.gif,.webp,.svg">
+                        <div id="postIconImagePreview" style="margin-top:8px;"></div>
+                    </div>
                     <div class="admin-form-group" id="postUrlGroup" style="display: none;">
                         <label for="postUrl">🔗 외부 URL / 다운로드 링크</label>
                         <input type="url" id="postUrl" placeholder="예: https://docs.google.com/...">
@@ -1044,13 +1049,13 @@
     </div>
 
 <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
-<script src="js/core.js?v=50"></script>
-<script src="js/navigation.js?v=50"></script>
-<script src="js/search.js?v=50"></script>
-<script src="js/viewer.js?v=50"></script>
-<script src="js/board.js?v=50"></script>
-<script src="js/features.js?v=50"></script>
-<script src="js/app.js?v=50"></script>
-<script src="js/admin.js?v=50"></script>
+<script src="js/core.js?v=51"></script>
+<script src="js/navigation.js?v=51"></script>
+<script src="js/search.js?v=51"></script>
+<script src="js/viewer.js?v=51"></script>
+<script src="js/board.js?v=51"></script>
+<script src="js/features.js?v=51"></script>
+<script src="js/app.js?v=51"></script>
+<script src="js/admin.js?v=51"></script>
 </body>
 </html>

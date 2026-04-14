@@ -262,6 +262,12 @@ window.editPost = async function(id) {
     togglePostFields();
     document.getElementById('postTitle').value = post.title || '';
     document.getElementById('postIcon').value = post.icon || '';
+    var iconImgInput = document.getElementById('postIconImage');
+    if (iconImgInput) iconImgInput.value = '';
+    var iconImgPreview = document.getElementById('postIconImagePreview');
+    if (iconImgPreview) iconImgPreview.innerHTML = post.thumbnail
+        ? '<img src="/api/files/' + post.thumbnail + '" style="max-height:48px; border-radius:6px; border:1px solid var(--border-color);"> <span style="font-size:12px; color:var(--text-light);">기존 아이콘 (새 파일 선택 시 교체)</span>'
+        : '';
     document.getElementById('postSubInfo').value = post.subInfo || '';
     document.getElementById('postContent').value = post.content || '';
     document.getElementById('postUrl').value = post.url || '';
@@ -286,6 +292,8 @@ window.cancelEditPostForm = function() {
     document.getElementById('postIcon').value = '';
     document.getElementById('postSubInfo').value = '';
     document.getElementById('postFileName').value = '';
+    var _iconImg = document.getElementById('postIconImage'); if (_iconImg) _iconImg.value = '';
+    var _iconPrev = document.getElementById('postIconImagePreview'); if (_iconPrev) _iconPrev.innerHTML = '';
     var btn = document.getElementById('addPostBtn');
     if (btn) { btn.textContent = '게시물 등록'; btn.classList.replace('admin-btn-primary', 'admin-btn-success'); }
 };
@@ -1583,6 +1591,17 @@ window.togglePostFields = function() {
     if (postImgGroup) postImgGroup.style.display = (type === 'images') ? 'block' : 'none';
 };
 
+// 아이콘 이미지 선택 → 즉시 미리보기
+var _postIconImgEl = document.getElementById('postIconImage');
+if (_postIconImgEl) _postIconImgEl.addEventListener('change', function() {
+    var prev = document.getElementById('postIconImagePreview');
+    if (!prev) return;
+    var f = this.files && this.files[0];
+    if (!f) { prev.innerHTML = ''; return; }
+    var url = URL.createObjectURL(f);
+    prev.innerHTML = '<img src="' + url + '" style="max-height:48px; border-radius:6px; border:1px solid var(--border-color);"> <span style="font-size:12px; color:var(--text-light);">' + f.name + '</span>';
+});
+
 // PDF 파일 선택 → 서버 업로드
 var postPdfFileEl = document.getElementById('postPdfFile');
 if (postPdfFileEl) postPdfFileEl.addEventListener('change', async function(e) {
@@ -1619,9 +1638,21 @@ if (addPostBtnEl) addPostBtnEl.addEventListener('click', async function() {
         fileName: type === 'pdf' ? fileName : ''
     };
 
-    // 수정 시 기존 이미지 정보 보존
+    // 아이콘 이미지 업로드 (선택)
+    var iconImgEl = document.getElementById('postIconImage');
+    if (iconImgEl && iconImgEl.files && iconImgEl.files.length > 0) {
+        var iconFd = new FormData();
+        iconFd.append('file', iconImgEl.files[0]);
+        try {
+            var iconRes = await fetch('/api/upload', { method: 'POST', body: iconFd });
+            var iconData = await iconRes.json();
+            if (!iconData.error) postData.thumbnail = iconData.fileName;
+        } catch(e) { console.error('아이콘 업로드 실패:', e); }
+    }
+
+    // 수정 시 기존 이미지 정보 보존 (아이콘을 새로 올리지 않았을 때만)
     if (editPostId && window._editPostOriginal) {
-        if (window._editPostOriginal.thumbnail) postData.thumbnail = window._editPostOriginal.thumbnail;
+        if (!postData.thumbnail && window._editPostOriginal.thumbnail) postData.thumbnail = window._editPostOriginal.thumbnail;
         if (window._editPostOriginal.detailImage) postData.detailImage = window._editPostOriginal.detailImage;
         if (window._editPostOriginal.bgColor) postData.bgColor = window._editPostOriginal.bgColor;
     }
@@ -1659,6 +1690,8 @@ if (addPostBtnEl) addPostBtnEl.addEventListener('click', async function() {
         alert('게시물이 저장되었습니다!');
         document.getElementById('postTitle').value = ''; document.getElementById('postContent').value = ''; document.getElementById('postUrl').value = '';
         document.getElementById('postFileName').value = ''; document.getElementById('postPdfFileName').textContent = '';
+        var _pii = document.getElementById('postIconImage'); if (_pii) _pii.value = '';
+        var _piip = document.getElementById('postIconImagePreview'); if (_piip) _piip.innerHTML = '';
         var postImgEl = document.getElementById('postImages'); if (postImgEl) postImgEl.value = '';
         var postImgPrev = document.getElementById('postImagesPreview'); if (postImgPrev) postImgPrev.innerHTML = '';
         var postImgStat = document.getElementById('postImagesStatus'); if (postImgStat) postImgStat.textContent = '';
