@@ -294,7 +294,7 @@ var _orgNodes = []; // 현재 로드된 노드 데이터
 var _orgIsAdmin = false;
 var _orgDragNode = null, _orgDragOffX = 0, _orgDragOffY = 0;
 var _orgSaveTimer = null;
-var NODE_W = 160, NODE_H = 58;
+var NODE_W = 140, NODE_H = 56;
 
 function escapeHtml(str) {
     if (!str) return '';
@@ -319,10 +319,38 @@ function _orgBuildTree(data) {
     return { roots: roots, map: map };
 }
 
+// 겹침 방지: 같은 y행의 노드들을 최소 간격으로 재배치 (기존 위치 최대한 유지)
+function _orgResolveOverlap(data) {
+    var MIN_GAP = 15;
+    var rowBuckets = {};
+    data.forEach(function(n) {
+        var y = parseInt(n.y)||0;
+        // ±10px 이내는 같은 행으로 묶기
+        var key = Math.round(y / 20) * 20;
+        if (!rowBuckets[key]) rowBuckets[key] = [];
+        rowBuckets[key].push(n);
+    });
+    var shifted = false;
+    Object.keys(rowBuckets).forEach(function(k) {
+        var row = rowBuckets[k];
+        row.sort(function(a,b) { return (parseInt(a.x)||0) - (parseInt(b.x)||0); });
+        for (var i = 1; i < row.length; i++) {
+            var prev = row[i-1], cur = row[i];
+            var prevRight = (parseInt(prev.x)||0) + NODE_W;
+            var curLeft = parseInt(cur.x)||0;
+            if (curLeft < prevRight + MIN_GAP) {
+                cur.x = String(prevRight + MIN_GAP);
+                shifted = true;
+            }
+        }
+    });
+    return shifted;
+}
+
 // 자동 레이아웃: 트리를 x,y 좌표로 배치
 function _orgAutoLayout(data) {
     var tree = _orgBuildTree(data);
-    var gapX = 190, gapY = 110;
+    var gapX = 170, gapY = 105;
     var xCounter = { val: 40 };
 
     function layout(node, depth) {
@@ -506,6 +534,7 @@ async function loadOrgChart() {
         // 좌표가 없으면 자동 레이아웃
         var hasCoords = data.some(function(n){ return n.x && n.y; });
         if (!hasCoords) data = _orgAutoLayout(data);
+        _orgResolveOverlap(data);
         _orgNodes = data;
 
         var size = _orgCalcCanvasSize(data);
@@ -550,8 +579,14 @@ async function loadAdminOrgCanvas() {
 
     var hasCoords = data.some(function(n){ return n.x && n.y; });
     if (!hasCoords) data = _orgAutoLayout(data);
+    // 저장된 위치가 현재 박스 크기와 겹치면 자동 보정
+    var shifted = _orgResolveOverlap(data);
     _orgNodes = data;
     _orgIsAdmin = true;
+    if (shifted) {
+        clearTimeout(_orgSaveTimer);
+        _orgSaveTimer = setTimeout(_orgSavePositions, 800);
+    }
 
     var size = _orgCalcCanvasSize(data);
     container.style.width = Math.max(size.w, 1200) + 'px';
