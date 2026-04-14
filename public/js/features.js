@@ -559,9 +559,8 @@ async function loadOrgChart() {
             return;
         }
 
-        // 좌표가 없으면 자동 레이아웃
-        var hasCoords = data.some(function(n){ return n.x && n.y; });
-        if (!hasCoords) data = _orgAutoLayout(data);
+        // 사용자 모드: 저장된 좌표 무시하고 항상 자동 레이아웃으로 깨끗하게 배치
+        data = _orgAutoLayout(data);
         _orgResolveOverlap(data);
         _orgNodes = data;
 
