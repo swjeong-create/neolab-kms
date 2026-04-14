@@ -492,7 +492,7 @@ function buildOrgFlatList(data) {
     var flat = [];
     function flatten(node, depth) {
         var isDept = !node.title && (node.children.length > 0 || !node.department || node.name === node.department);
-        flat.push({ id: node.id, name: node.name, title: node.title||'', department: node.department||'', parentId: node.parentId||'', order: node.order||'0', depth: depth, isDept: isDept });
+        flat.push({ id: node.id, name: node.name, title: node.title||'', department: node.department||'', parentId: node.parentId||'', order: node.order||'0', color: node.color||'', depth: depth, isDept: isDept });
         node.children.forEach(function(c) { flatten(c, depth + 1); });
     }
     roots.forEach(function(r) { flatten(r, 0); });
@@ -555,9 +555,10 @@ function renderAdminOrgTree(data) {
         // 노드 행
         var rowBg = isDept ? 'linear-gradient(90deg,#fff7ed,#fffbf5)' : '#ffffff';
         var borderColor = isDept ? '#fed7aa' : '#e2e8f0';
+        var colorDot = node.color ? '<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:' + escape(node.color) + '; border:1px solid rgba(0,0,0,0.15); margin-right:6px; vertical-align:middle;"></span>' : '';
         var nameHtml = isDept
-            ? '<span style="font-weight:700; color:#9a3412; font-size:14px;">' + escape(node.name) + '</span>'
-            : '<span style="font-weight:600; color:#0f172a; font-size:13px;">' + escape(node.name) + '</span>' +
+            ? colorDot + '<span style="font-weight:700; color:#9a3412; font-size:14px;">' + escape(node.name) + '</span>'
+            : colorDot + '<span style="font-weight:600; color:#0f172a; font-size:13px;">' + escape(node.name) + '</span>' +
               (node.title ? '<span style="color:#64748b; font-size:12px; font-weight:400; margin-left:6px;">' + escape(node.title) + '</span>' : '') +
               (node.department ? '<span style="font-size:10px; background:#e0f2fe; color:#0369a1; padding:2px 7px; border-radius:10px; margin-left:8px;">' + escape(node.department) + '</span>' : '');
 
@@ -575,6 +576,7 @@ function renderAdminOrgTree(data) {
         var icon = isDept ? '🏢' : '👤';
 
         var actions = '<div style="display:flex; gap:2px; opacity:0; transition:opacity 0.15s;" class="admin-org-actions">' +
+            '<button type="button" onclick="showEditNodeDialog(\'' + node.id + '\')" style="background:#fff; border:1px solid #bfdbfe; border-radius:5px; cursor:pointer; padding:3px 7px; font-size:11px; color:#2563eb;" title="편집">✎</button>' +
             '<button type="button" onclick="orgMoveUp(' + idx + ')" style="background:#fff; border:1px solid #e2e8f0; border-radius:5px; cursor:pointer; padding:3px 7px; font-size:11px; color:#475569;" title="위로">▲</button>' +
             '<button type="button" onclick="orgMoveDown(' + idx + ')" style="background:#fff; border:1px solid #e2e8f0; border-radius:5px; cursor:pointer; padding:3px 7px; font-size:11px; color:#475569;" title="아래로">▼</button>' +
             '<button type="button" onclick="orgIndentRight(' + idx + ')" style="background:#fff; border:1px solid #e2e8f0; border-radius:5px; cursor:pointer; padding:3px 7px; font-size:11px; color:#475569;" title="하위로">→</button>' +
@@ -816,6 +818,80 @@ window.deleteOrgNode = async function(id) {
 };
 
 // ─── 노드 추가 ───
+// ─── 조직도 노드 편집 모달 ───
+window.showEditNodeDialog = function(id) {
+    var node = _orgFlatList.find(function(n){ return n.id === id; });
+    if (!node) {
+        // fresh fetch fallback
+        api.get('/api/orgchart').then(function(data){
+            var n = data.find(function(x){ return x.id === id; });
+            if (n) _openOrgEditModal(n);
+        });
+        return;
+    }
+    _openOrgEditModal(node);
+};
+
+function _openOrgEditModal(node) {
+    document.getElementById('orgEditId').value = node.id;
+    document.getElementById('orgEditName').value = node.name || '';
+    document.getElementById('orgEditTitle').value = node.title || '';
+    document.getElementById('orgEditDepartment').value = node.department || '';
+    var color = node.color || '';
+    document.getElementById('orgEditColor').value = color || '#cccccc';
+    document.getElementById('orgEditColorHex').value = color;
+    document.getElementById('orgEditModal').style.display = 'flex';
+}
+
+window.closeOrgEditModal = function() {
+    document.getElementById('orgEditModal').style.display = 'none';
+};
+
+window.orgEditSetColor = function(hex) {
+    document.getElementById('orgEditColor').value = hex;
+    document.getElementById('orgEditColorHex').value = hex;
+};
+
+window.orgEditClearColor = function() {
+    document.getElementById('orgEditColor').value = '#cccccc';
+    document.getElementById('orgEditColorHex').value = '';
+};
+
+// 색상 picker <-> hex 텍스트 양방향 동기화
+document.addEventListener('DOMContentLoaded', function() {
+    var cp = document.getElementById('orgEditColor');
+    var hx = document.getElementById('orgEditColorHex');
+    if (cp) cp.addEventListener('input', function() { hx.value = cp.value; });
+    if (hx) hx.addEventListener('input', function() {
+        var v = hx.value.trim();
+        if (/^#[0-9a-fA-F]{6}$/.test(v)) cp.value = v;
+    });
+});
+
+window.saveOrgEditNode = async function() {
+    var id = document.getElementById('orgEditId').value;
+    var name = document.getElementById('orgEditName').value.trim();
+    if (!name) { alert('이름은 필수입니다.'); return; }
+    var title = document.getElementById('orgEditTitle').value.trim();
+    var department = document.getElementById('orgEditDepartment').value.trim();
+    var colorHex = document.getElementById('orgEditColorHex').value.trim();
+    if (colorHex && !/^#[0-9a-fA-F]{6}$/.test(colorHex)) {
+        alert('색상 형식은 #RRGGBB 여야 합니다.');
+        return;
+    }
+    try {
+        await api.put('/api/orgchart/' + id, {
+            name: name, title: title, department: department, color: colorHex
+        });
+        invalidate('/api/orgchart');
+        closeOrgEditModal();
+        await loadAdminOrgChart();
+        await loadOrgChart();
+    } catch(e) {
+        alert('저장 실패: ' + e.message);
+    }
+};
+
 window.showAddNodeDialog = function(type) {
     var name = prompt(type === 'dept' ? '부서명을 입력하세요:' : '이름을 입력하세요:');
     if (!name) return;

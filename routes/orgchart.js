@@ -74,6 +74,7 @@ router.put('/api/orgchart/save-positions', requireAdmin, async (req, res) => {
 
 router.put('/api/orgchart/:id', requireAdmin, async (req, res) => {
     try {
+        await ensureHeaders('orgchart');
         const data = await getSheetData('orgchart');
         const row = data.find(r => r.id === req.params.id);
         if (!row) return res.status(404).json({ error: '조직도 항목을 찾을 수 없습니다.' });

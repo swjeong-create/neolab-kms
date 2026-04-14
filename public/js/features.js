@@ -438,6 +438,16 @@ function _orgDrawLines(svgEl, data) {
     svgEl.innerHTML = html;
 }
 
+// hex 색상 대비 텍스트 (밝으면 검정, 어두우면 흰색)
+function _orgContrastText(hex) {
+    if (!hex) return '#0f172a';
+    var h = hex.replace('#','');
+    if (h.length === 3) h = h.split('').map(function(c){return c+c;}).join('');
+    var r = parseInt(h.substr(0,2),16), g = parseInt(h.substr(2,2),16), b = parseInt(h.substr(4,2),16);
+    var lum = (0.299*r + 0.587*g + 0.114*b) / 255;
+    return lum > 0.6 ? '#0f172a' : '#ffffff';
+}
+
 // 노드 HTML 생성
 function _orgRenderNodes(container, data, editable) {
     var html = '';
@@ -445,15 +455,21 @@ function _orgRenderNodes(container, data, editable) {
         var isDept = !node.title;
         var x = parseInt(node.x)||0, y = parseInt(node.y)||0;
         var cls = isDept ? 'orgc-dept' : 'orgc-person';
+        var colorStyle = '';
+        if (node.color) {
+            // 사용자 지정 색: 배경 + 대비색 글자
+            var textColor = _orgContrastText(node.color);
+            colorStyle = ' background:' + node.color + ' !important; background-image:none !important; color:' + textColor + ' !important;';
+        }
 
-        html += '<div class="orgc-node ' + cls + '" data-id="' + node.id + '" style="left:'+x+'px; top:'+y+'px; width:'+NODE_W+'px;"';
-        if (editable) html += ' onmousedown="orgNodeMouseDown(event, \'' + node.id + '\')" oncontextmenu="orgNodeContextMenu(event, \'' + node.id + '\')"';
+        html += '<div class="orgc-node ' + cls + '" data-id="' + node.id + '" style="left:'+x+'px; top:'+y+'px; width:'+NODE_W+'px;' + colorStyle + '"';
+        if (editable) html += ' onmousedown="orgNodeMouseDown(event, \'' + node.id + '\')" oncontextmenu="orgNodeContextMenu(event, \'' + node.id + '\')" ondblclick="showEditNodeDialog(\'' + node.id + '\')"';
         html += '>';
         if (isDept) {
             html += '<div class="orgc-dept-name">' + escapeHtml(node.name) + '</div>';
         } else {
             html += '<div class="orgc-p-name">' + escapeHtml(node.name) + '</div>';
-            html += '<div class="orgc-p-title">' + escapeHtml(node.title) + '</div>';
+            html += '<div class="orgc-p-title"' + (node.color ? ' style="color:' + _orgContrastText(node.color) + '; opacity:0.85;"' : '') + '>' + escapeHtml(node.title) + '</div>';
         }
         html += '</div>';
     });
