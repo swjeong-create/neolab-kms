@@ -518,7 +518,7 @@ function _orgRenderNodes(container, data, editable) {
             colorStyle = ' background:' + node.color + ' !important; background-image:none !important; color:' + textColor + ' !important;';
         }
 
-        html += '<div class="orgc-node ' + cls + '" data-id="' + node.id + '" style="left:'+x+'px; top:'+y+'px; width:'+NODE_W+'px;' + colorStyle + '"';
+        html += '<div class="orgc-node ' + cls + '" data-id="' + node.id + '" style="left:'+x+'px; top:'+y+'px; width:'+NODE_W+'px; height:'+NODE_H+'px; box-sizing:border-box; overflow:hidden;' + colorStyle + '"';
         if (editable) html += ' onmousedown="orgNodeMouseDown(event, \'' + node.id + '\')" oncontextmenu="orgNodeContextMenu(event, \'' + node.id + '\')" ondblclick="showEditNodeDialog(\'' + node.id + '\')"';
         html += '>';
         if (isDept) {
