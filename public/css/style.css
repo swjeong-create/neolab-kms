@@ -699,13 +699,15 @@
         .orgc-node {
             position: absolute;
             z-index: 1;
-            border-radius: 8px;
+            border-radius: 10px;
             text-align: center;
-            transition: box-shadow 0.15s;
+            transition: box-shadow 0.15s, transform 0.15s;
             user-select: none;
             font-size: 14px;
-            line-height: 1.35;
+            line-height: 1.4;
+            box-shadow: 0 1px 3px rgba(15,23,42,0.08);
         }
+        .orgc-node:hover { transform: translateY(-1px); }
         .orgc-node:hover { z-index: 50; box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
         .org-link-mode .orgc-node { cursor: crosshair !important; }
         .org-link-mode .orgc-node:hover { outline: 2px dashed #3b82f6; outline-offset: 2px; }
@@ -713,16 +715,18 @@
         .orgc-dept {
             background: linear-gradient(135deg, #ff6720, #ff884d);
             color: white;
-            padding: 8px 6px;
-            border: 2px solid #e55c1c;
+            padding: 10px 10px;
+            border: 1.5px solid #e55c1c;
             cursor: grab;
+            display: flex; align-items: center; justify-content: center;
         }
-        .orgc-dept-name { font-weight: 700; font-size: 15px; }
+        .orgc-dept-name { font-weight: 700; font-size: 15px; letter-spacing: -0.2px; }
         .orgc-person {
             background: white;
             border: 1.5px solid #d1d5db;
-            padding: 6px 5px;
+            padding: 9px 10px;
             cursor: grab;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
-        .orgc-p-name { font-weight: 600; font-size: 14px; color: #1e293b; }
-        .orgc-p-title { font-size: 12px; color: #64748b; margin-top: 2px; }
+        .orgc-p-name { font-weight: 700; font-size: 14px; color: #0f172a; letter-spacing: -0.2px; }
+        .orgc-p-title { font-size: 12px; color: #64748b; margin-top: 3px; letter-spacing: -0.2px; }
