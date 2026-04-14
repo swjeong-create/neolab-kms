@@ -294,7 +294,7 @@ var _orgNodes = []; // 현재 로드된 노드 데이터
 var _orgIsAdmin = false;
 var _orgDragNode = null, _orgDragOffX = 0, _orgDragOffY = 0;
 var _orgSaveTimer = null;
-var NODE_W = 150, NODE_H = 62;
+var NODE_W = 130, NODE_H = 52;
 
 function escapeHtml(str) {
     if (!str) return '';

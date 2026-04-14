@@ -713,7 +713,7 @@
         .orgc-dept {
             background: linear-gradient(135deg, #ff6720, #ff884d);
             color: white;
-            padding: 11px 10px;
+            padding: 8px 6px;
             border: 2px solid #e55c1c;
             cursor: grab;
         }
@@ -721,7 +721,7 @@
         .orgc-person {
             background: white;
             border: 1.5px solid #d1d5db;
-            padding: 10px 8px;
+            padding: 6px 5px;
             cursor: grab;
         }
         .orgc-p-name { font-weight: 600; font-size: 14px; color: #1e293b; }
