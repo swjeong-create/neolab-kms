@@ -707,6 +707,9 @@
             line-height: 1.3;
         }
         .orgc-node:hover { z-index: 50; box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
+        .org-link-mode .orgc-node { cursor: crosshair !important; }
+        .org-link-mode .orgc-node:hover { outline: 2px dashed #3b82f6; outline-offset: 2px; }
+        .orgc-node.org-link-selected { outline: 3px solid #3b82f6 !important; outline-offset: 2px; box-shadow: 0 0 0 4px rgba(59,130,246,0.2); }
         .orgc-dept {
             background: linear-gradient(135deg, #ff6720, #ff884d);
             color: white;

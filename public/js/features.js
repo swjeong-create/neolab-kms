@@ -413,7 +413,7 @@ function _orgRenderNodes(container, data, editable) {
         var cls = isDept ? 'orgc-dept' : 'orgc-person';
 
         html += '<div class="orgc-node ' + cls + '" data-id="' + node.id + '" style="left:'+x+'px; top:'+y+'px; width:'+NODE_W+'px;"';
-        if (editable) html += ' onmousedown="orgNodeMouseDown(event, \'' + node.id + '\')"';
+        if (editable) html += ' onmousedown="orgNodeMouseDown(event, \'' + node.id + '\')" oncontextmenu="orgNodeContextMenu(event, \'' + node.id + '\')"';
         html += '>';
         if (isDept) {
             html += '<div class="orgc-dept-name">' + escapeHtml(node.name) + '</div>';
@@ -514,11 +514,94 @@ async function loadAdminOrgCanvas() {
     _orgRenderNodes(container, data, true);
 }
 
+// ─── 연결선 그리기 모드 ───
+var _orgLinkMode = false;
+var _orgLinkFrom = null; // 선택된 부모 노드
+
+window.orgToggleLinkMode = function() {
+    _orgLinkMode = !_orgLinkMode;
+    _orgLinkFrom = null;
+    var btn = document.getElementById('orgLinkModeBtn');
+    var hint = document.getElementById('orgLinkModeHint');
+    var canvas = document.getElementById('adminOrgCanvas');
+    if (_orgLinkMode) {
+        if (btn) { btn.style.background = '#3b82f6'; btn.style.color = '#fff'; btn.style.borderColor = '#3b82f6'; }
+        if (hint) hint.textContent = '① 부모 노드 클릭 → ② 자식 노드 클릭 (우클릭: 연결 해제)';
+        if (canvas) canvas.classList.add('org-link-mode');
+    } else {
+        if (btn) { btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = ''; }
+        if (hint) hint.textContent = '노드를 마우스로 드래그하여 위치 변경';
+        if (canvas) {
+            canvas.classList.remove('org-link-mode');
+            canvas.querySelectorAll('.orgc-node').forEach(function(n) { n.classList.remove('org-link-selected'); });
+        }
+    }
+};
+
+function _orgSetParent(childId, parentId) {
+    var child = _orgNodes.find(function(n){ return n.id === childId; });
+    if (!child) return;
+    child.parentId = parentId || '';
+    // 즉시 화면 반영
+    var container = document.getElementById('adminOrgCanvas');
+    var svg = container && container.querySelector('svg');
+    if (svg) _orgDrawLines(svg, _orgNodes);
+    // 서버 저장
+    api.put('/api/orgchart/reorder', { updates: [{ id: childId, parentId: parentId || '' }] }).then(function() {
+        invalidate('/api/orgchart');
+    }).catch(function(e) { console.error('연결 저장 실패:', e); alert('연결 저장 실패: ' + e.message); });
+}
+
+window.orgNodeContextMenu = function(e, nodeId) {
+    if (!_orgIsAdmin) return;
+    e.preventDefault();
+    var node = _orgNodes.find(function(n){ return n.id === nodeId; });
+    if (!node) return;
+    if (!node.parentId) { alert('이 노드는 부모와 연결되어 있지 않습니다.'); return; }
+    if (confirm('이 노드의 연결을 해제하시겠습니까?')) {
+        _orgSetParent(nodeId, '');
+    }
+};
+
 // 노드 드래그 시작
 window.orgNodeMouseDown = function(e, nodeId) {
     if (e.button !== 0) return;
     e.preventDefault();
     e.stopPropagation();
+
+    // 연결선 그리기 모드
+    if (_orgLinkMode) {
+        var el = e.currentTarget;
+        if (!_orgLinkFrom) {
+            _orgLinkFrom = nodeId;
+            el.classList.add('org-link-selected');
+        } else if (_orgLinkFrom === nodeId) {
+            // 같은 노드 클릭 시 선택 해제
+            el.classList.remove('org-link-selected');
+            _orgLinkFrom = null;
+        } else {
+            // 순환 참조 방지: from이 nodeId의 자손이면 안됨
+            var isDescendant = function(ancestorId, descId) {
+                var n = _orgNodes.find(function(x){ return x.id === descId; });
+                while (n && n.parentId) {
+                    if (n.parentId === ancestorId) return true;
+                    n = _orgNodes.find(function(x){ return x.id === n.parentId; });
+                }
+                return false;
+            };
+            if (isDescendant(nodeId, _orgLinkFrom)) {
+                alert('순환 연결은 만들 수 없습니다.');
+            } else {
+                _orgSetParent(nodeId, _orgLinkFrom);
+            }
+            // 초기화
+            var container = document.getElementById('adminOrgCanvas');
+            if (container) container.querySelectorAll('.orgc-node').forEach(function(n) { n.classList.remove('org-link-selected'); });
+            _orgLinkFrom = null;
+        }
+        return;
+    }
+
     var el = e.currentTarget;
     _orgDragNode = { id: nodeId, el: el };
     var rect = el.getBoundingClientRect();
