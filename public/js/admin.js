@@ -499,6 +499,30 @@ function buildOrgFlatList(data) {
     return flat;
 }
 
+// 접힘 상태 저장 (id → bool)
+var _orgCollapsed = (function(){
+    try { return JSON.parse(localStorage.getItem('orgTreeCollapsed') || '{}'); } catch(e) { return {}; }
+})();
+function _orgSaveCollapsed() {
+    try { localStorage.setItem('orgTreeCollapsed', JSON.stringify(_orgCollapsed)); } catch(e) {}
+}
+
+function _buildOrgTree(data) {
+    var map = {}, roots = [];
+    data.forEach(function(n) { map[n.id] = Object.assign({}, n, { children: [] }); });
+    data.forEach(function(n) {
+        if (n.parentId && map[n.parentId]) map[n.parentId].children.push(map[n.id]);
+        else roots.push(map[n.id]);
+    });
+    function sortKids(node) {
+        node.children.sort(function(a,b) { return (parseInt(a.order)||999) - (parseInt(b.order)||999); });
+        node.children.forEach(sortKids);
+    }
+    roots.sort(function(a,b) { return (parseInt(a.order)||999) - (parseInt(b.order)||999); });
+    roots.forEach(sortKids);
+    return roots;
+}
+
 function renderAdminOrgTree(data) {
     var container = document.getElementById('adminOrgTreeContainer');
     if (!container) return;
@@ -508,35 +532,103 @@ function renderAdminOrgTree(data) {
         return;
     }
     _orgFlatList = buildOrgFlatList(data);
+    var tree = _buildOrgTree(data);
 
-    var html = '';
-    _orgFlatList.forEach(function(node, idx) {
-        var indent = node.depth * 28;
-        var icon = node.isDept ? '🏢' : '👤';
-        var label = node.isDept ? node.name : (node.name + (node.title ? ' <span style="color:#64748b; font-weight:400;">' + node.title + '</span>' : ''));
-        var deptBadge = (!node.isDept && node.department) ? '<span style="font-size:10px; background:#e0f2fe; color:#0369a1; padding:1px 6px; border-radius:4px; margin-left:4px;">' + node.department + '</span>' : '';
-        var bgColor = node.isDept ? '#f0f9ff' : 'white';
+    // 툴바: 전체 펼치기/접기 + 카운트
+    var total = data.length;
+    var deptCount = data.filter(function(n){ return !n.title; }).length;
+    var personCount = total - deptCount;
+    var toolbar = '<div style="display:flex; align-items:center; gap:8px; padding:8px 4px 12px 4px; border-bottom:1px dashed var(--border-color); margin-bottom:10px; flex-wrap:wrap;">' +
+        '<button type="button" class="admin-btn admin-btn-outline admin-btn-small" onclick="orgTreeExpandAll()">⊞ 모두 펼치기</button>' +
+        '<button type="button" class="admin-btn admin-btn-outline admin-btn-small" onclick="orgTreeCollapseAll()">⊟ 모두 접기</button>' +
+        '<span style="margin-left:auto; font-size:12px; color:var(--text-light);">총 ' + total + '개 (부서 ' + deptCount + ' · 인원 ' + personCount + ')</span>' +
+        '</div>';
 
-        html += '<div class="admin-org-row" data-idx="' + idx + '" data-id="' + node.id + '" draggable="true" style="display:flex; align-items:center; gap:6px; padding:7px 10px; margin:1px 0; margin-left:' + indent + 'px; background:' + bgColor + '; border:1px solid var(--border-color); border-radius:8px; transition:all 0.15s; cursor:grab;" ondragstart="orgRowDragStart(event,' + idx + ')" ondragover="orgRowDragOver(event,' + idx + ')" ondragleave="orgRowDragLeave(event)" ondrop="orgRowDrop(event,' + idx + ')" ondragend="orgRowDragEnd(event)">';
-        // 드래그 핸들
-        html += '<span style="cursor:grab; opacity:0.3; font-size:12px; user-select:none;">⠿</span>';
-        // 아이콘
-        html += '<span style="font-size:14px;">' + icon + '</span>';
-        // 이름
-        html += '<span style="flex:1; font-size:13px; font-weight:' + (node.isDept ? '700' : '400') + ';">' + label + deptBadge + '</span>';
-        // 이동 버튼들
-        html += '<div style="display:flex; gap:2px;">';
-        html += '<button type="button" onclick="orgMoveUp(' + idx + ')" style="background:none; border:1px solid #e2e8f0; border-radius:4px; cursor:pointer; padding:1px 5px; font-size:11px; color:#64748b;" title="위로">▲</button>';
-        html += '<button type="button" onclick="orgMoveDown(' + idx + ')" style="background:none; border:1px solid #e2e8f0; border-radius:4px; cursor:pointer; padding:1px 5px; font-size:11px; color:#64748b;" title="아래로">▼</button>';
-        html += '<button type="button" onclick="orgIndentRight(' + idx + ')" style="background:none; border:1px solid #e2e8f0; border-radius:4px; cursor:pointer; padding:1px 5px; font-size:11px; color:#64748b;" title="하위로 이동">→</button>';
-        html += '<button type="button" onclick="orgIndentLeft(' + idx + ')" style="background:none; border:1px solid #e2e8f0; border-radius:4px; cursor:pointer; padding:1px 5px; font-size:11px; color:#64748b;" title="상위로 이동">←</button>';
-        html += '</div>';
-        // 삭제
-        html += '<button type="button" onclick="deleteOrgNode(\'' + node.id + '\')" style="background:none; border:none; cursor:pointer; color:#ef4444; font-size:14px; padding:0 4px;" title="삭제">×</button>';
-        html += '</div>';
-    });
-    container.innerHTML = html;
+    function escape(s) { return (s==null?'':String(s)).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+    function renderNode(node, depth) {
+        var isDept = !node.title;
+        var hasChildren = node.children && node.children.length > 0;
+        var collapsed = !!_orgCollapsed[node.id];
+        var idx = _orgFlatList.findIndex(function(f){ return f.id === node.id; });
+
+        // 노드 행
+        var rowBg = isDept ? 'linear-gradient(90deg,#fff7ed,#fffbf5)' : '#ffffff';
+        var borderColor = isDept ? '#fed7aa' : '#e2e8f0';
+        var nameHtml = isDept
+            ? '<span style="font-weight:700; color:#9a3412; font-size:14px;">' + escape(node.name) + '</span>'
+            : '<span style="font-weight:600; color:#0f172a; font-size:13px;">' + escape(node.name) + '</span>' +
+              (node.title ? '<span style="color:#64748b; font-size:12px; font-weight:400; margin-left:6px;">' + escape(node.title) + '</span>' : '') +
+              (node.department ? '<span style="font-size:10px; background:#e0f2fe; color:#0369a1; padding:2px 7px; border-radius:10px; margin-left:8px;">' + escape(node.department) + '</span>' : '');
+
+        var caret;
+        if (hasChildren) {
+            caret = '<button type="button" onclick="orgTreeToggle(\'' + node.id + '\')" style="background:none; border:none; cursor:pointer; font-size:11px; color:#64748b; width:18px; height:18px; padding:0; display:inline-flex; align-items:center; justify-content:center;">' + (collapsed ? '▶' : '▼') + '</button>';
+        } else {
+            caret = '<span style="display:inline-block; width:18px;"></span>';
+        }
+
+        var childCount = hasChildren
+            ? '<span style="font-size:10px; background:#f1f5f9; color:#475569; padding:2px 7px; border-radius:10px; margin-left:6px;">' + node.children.length + '</span>'
+            : '';
+
+        var icon = isDept ? '🏢' : '👤';
+
+        var actions = '<div style="display:flex; gap:2px; opacity:0; transition:opacity 0.15s;" class="admin-org-actions">' +
+            '<button type="button" onclick="orgMoveUp(' + idx + ')" style="background:#fff; border:1px solid #e2e8f0; border-radius:5px; cursor:pointer; padding:3px 7px; font-size:11px; color:#475569;" title="위로">▲</button>' +
+            '<button type="button" onclick="orgMoveDown(' + idx + ')" style="background:#fff; border:1px solid #e2e8f0; border-radius:5px; cursor:pointer; padding:3px 7px; font-size:11px; color:#475569;" title="아래로">▼</button>' +
+            '<button type="button" onclick="orgIndentRight(' + idx + ')" style="background:#fff; border:1px solid #e2e8f0; border-radius:5px; cursor:pointer; padding:3px 7px; font-size:11px; color:#475569;" title="하위로">→</button>' +
+            '<button type="button" onclick="orgIndentLeft(' + idx + ')" style="background:#fff; border:1px solid #e2e8f0; border-radius:5px; cursor:pointer; padding:3px 7px; font-size:11px; color:#475569;" title="상위로">←</button>' +
+            '<button type="button" onclick="deleteOrgNode(\'' + node.id + '\')" style="background:#fff; border:1px solid #fecaca; border-radius:5px; cursor:pointer; padding:3px 7px; font-size:11px; color:#dc2626;" title="삭제">×</button>' +
+            '</div>';
+
+        var row = '<div class="admin-org-row" data-idx="' + idx + '" data-id="' + node.id + '" draggable="true"' +
+            ' ondragstart="orgRowDragStart(event,' + idx + ')" ondragover="orgRowDragOver(event,' + idx + ')" ondragleave="orgRowDragLeave(event)" ondrop="orgRowDrop(event,' + idx + ')" ondragend="orgRowDragEnd(event)"' +
+            ' style="display:flex; align-items:center; gap:8px; padding:9px 12px; margin:3px 0; background:' + rowBg + '; border:1px solid ' + borderColor + '; border-radius:10px; cursor:grab;"' +
+            ' onmouseenter="this.querySelector(\'.admin-org-actions\').style.opacity=1" onmouseleave="this.querySelector(\'.admin-org-actions\').style.opacity=0">' +
+            '<span style="opacity:0.3; font-size:12px; user-select:none;">⠿</span>' +
+            caret +
+            '<span style="font-size:15px;">' + icon + '</span>' +
+            '<span style="flex:1;">' + nameHtml + childCount + '</span>' +
+            actions +
+            '</div>';
+
+        var childrenHtml = '';
+        if (hasChildren && !collapsed) {
+            childrenHtml = '<div style="margin-left:22px; padding-left:12px; border-left:2px dashed ' + (isDept ? '#fed7aa' : '#e2e8f0') + ';">';
+            node.children.forEach(function(c) { childrenHtml += renderNode(c, depth + 1); });
+            childrenHtml += '</div>';
+        }
+        return row + childrenHtml;
+    }
+
+    var body = '';
+    tree.forEach(function(r) { body += renderNode(r, 0); });
+
+    container.innerHTML = toolbar + '<div>' + body + '</div>';
+    container.style.maxHeight = '520px';
 }
+
+window.orgTreeToggle = function(id) {
+    _orgCollapsed[id] = !_orgCollapsed[id];
+    _orgSaveCollapsed();
+    loadAdminOrgChart();
+};
+
+window.orgTreeExpandAll = function() {
+    _orgCollapsed = {};
+    _orgSaveCollapsed();
+    loadAdminOrgChart();
+};
+
+window.orgTreeCollapseAll = function() {
+    _orgFlatList.forEach(function(n) {
+        var hasChildren = _orgFlatList.some(function(x){ return x.parentId === n.id; });
+        if (hasChildren) _orgCollapsed[n.id] = true;
+    });
+    _orgSaveCollapsed();
+    loadAdminOrgChart();
+};
 
 // ─── 위/아래 이동 (같은 부모 내에서 순서 변경) ───
 window.orgMoveUp = async function(idx) {
