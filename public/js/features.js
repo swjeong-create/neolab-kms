@@ -708,6 +708,16 @@ function _orgRenderCssTree(container, data, editable) {
         nodesHtml;
 }
 
+// 저장된 x/y 좌표가 있는지 검사 (수동 배치 여부 판단)
+function _orgHasManualPositions(data) {
+    if (!data || data.length === 0) return false;
+    return data.some(function(n) {
+        var x = parseInt(n.x) || 0;
+        var y = parseInt(n.y) || 0;
+        return x > 0 || y > 0;
+    });
+}
+
 async function loadOrgChart() {
     try {
         var data = await cachedGet('/api/orgchart');
@@ -718,7 +728,19 @@ async function loadOrgChart() {
             canvas.innerHTML = '<div style="text-align:center; padding:60px 20px; color:var(--text-light);"><div style="font-size:48px; margin-bottom:16px;">🏢</div><p style="font-size:16px;">조직도가 등록되지 않았습니다.</p><p style="font-size:13px;">관리자 모드에서 Excel로 등록해주세요.</p></div>';
             return;
         }
-        _orgRenderCssTree(canvas, data, false);
+        // 수동 배치가 저장되어 있으면 그 좌표를 사용, 없으면 자동 트리 렌더
+        if (_orgHasManualPositions(data)) {
+            var size = _orgCalcCanvasSize(data);
+            canvas.style.position = 'relative';
+            canvas.style.width = size.w + 'px';
+            canvas.style.height = size.h + 'px';
+            canvas.innerHTML = '<svg width="'+size.w+'" height="'+size.h+'" style="position:absolute; top:0; left:0; pointer-events:none;"></svg>';
+            var svg = canvas.querySelector('svg');
+            _orgDrawLines(svg, data);
+            _orgRenderNodes(canvas, data, false);
+        } else {
+            _orgRenderCssTree(canvas, data, false);
+        }
     } catch(e) { console.error('조직도 로드 오류:', e); }
 }
 
@@ -751,15 +773,31 @@ async function loadAdminOrgCanvas() {
         return;
     }
 
+    // 수동 좌표가 전혀 없으면 자동 레이아웃으로 초기 좌표 부여 후 저장
+    if (!_orgHasManualPositions(data)) {
+        data = _orgAutoLayout(data);
+        try {
+            await api.put('/api/orgchart/save-positions', {
+                updates: data.map(function(n) { return { id: n.id, x: n.x, y: n.y }; })
+            });
+            invalidate('/api/orgchart');
+        } catch(e) { console.warn('초기 자동 배치 저장 실패:', e); }
+    }
+
     _orgNodes = data;
     _orgIsAdmin = true;
-    // 인라인 크기/위치 제거 (트리 모드)
-    container.style.width = 'auto';
-    container.style.height = 'auto';
+
+    // 절대 좌표 + 드래그 모드 렌더 (노드별 x/y 사용)
+    var size = _orgCalcCanvasSize(data);
+    container.style.position = 'relative';
+    container.style.width = size.w + 'px';
+    container.style.height = size.h + 'px';
     container.style.minWidth = '0';
     container.style.minHeight = '0';
-    container.style.position = '';
-    _orgRenderCssTree(container, data, true);
+    container.innerHTML = '<svg width="'+size.w+'" height="'+size.h+'" style="position:absolute; top:0; left:0; pointer-events:none;"></svg>';
+    var svg = container.querySelector('svg');
+    _orgDrawLines(svg, data);
+    _orgRenderNodes(container, data, true);
 }
 
 // ─── 연결선 그리기 모드 ───
