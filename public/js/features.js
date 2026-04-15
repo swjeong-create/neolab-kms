@@ -722,33 +722,43 @@ function _orgHasManualPositions(data) {
     });
 }
 
-// 일부 노드만 좌표가 비어있을 때(신규 노드 등) 부모 기준으로 채워 넣음
+// 자식 노드 좌표가 비정상(누락 또는 부모와 동떨어짐)인 경우 부모 기준으로 재배치
 function _orgFillMissingPositions(data) {
     if (!data || data.length === 0) return false;
     var map = {};
     data.forEach(function(n) { map[n.id] = n; });
     var changed = false;
-    var siblingOffset = {};
 
-    // 부모 아래 같은 라인에 이미 존재하는 형제 수를 세어 x를 살짝 옮겨 겹침 방지
-    data.forEach(function(n) {
+    function needsFix(n, p) {
         var x = parseInt(n.x) || 0, y = parseInt(n.y) || 0;
-        if (x > 0 || y > 0) return;
+        if (x === 0 && y === 0) return true;
+        if (!p) return false;
+        var py = parseInt(p.y) || 0;
+        // 부모보다 위에 있거나 같은 행이면 비정상 (자식은 반드시 부모 아래)
+        if (y <= py + 10) return true;
+        return false;
+    }
+
+    // 부모→자식 너비 그룹화 후 x 배치
+    var siblingIdx = {};
+    data.forEach(function(n) {
         var p = n.parentId ? map[n.parentId] : null;
-        if (p) {
-            var px = parseInt(p.x) || 0, py = parseInt(p.y) || 0;
-            var key = n.parentId;
-            siblingOffset[key] = (siblingOffset[key] || 0);
-            var offsetIdx = siblingOffset[key];
-            n.x = String(px + offsetIdx * 150);
-            n.y = String(py + 90);
-            siblingOffset[key]++;
+        if (!needsFix(n, p)) return;
+        if (!p) {
+            n.x = String(parseInt(n.x) || 400);
+            n.y = String(parseInt(n.y) || 40);
             changed = true;
-        } else {
-            n.x = '400';
-            n.y = '40';
-            changed = true;
+            return;
         }
+        var px = parseInt(p.x) || 0, py = parseInt(p.y) || 0;
+        var key = n.parentId;
+        siblingIdx[key] = (siblingIdx[key] || 0);
+        var idx = siblingIdx[key];
+        // 부모 바로 아래 중앙 정렬 (단일 자식이면 px 그대로)
+        n.x = String(px + idx * 150);
+        n.y = String(py + 90);
+        siblingIdx[key]++;
+        changed = true;
     });
     return changed;
 }
@@ -765,8 +775,15 @@ async function loadOrgChart() {
         }
         // 수동 배치가 저장되어 있으면 그 좌표를 사용, 없으면 자동 트리 렌더
         if (_orgHasManualPositions(data)) {
-            // 일부 누락된 노드 좌표 보강 (읽기 전용 뷰이므로 서버 저장은 안 함)
-            _orgFillMissingPositions(data);
+            // 일부 누락/비정상 좌표를 부모 기준으로 보강하고 서버에도 반영
+            if (_orgFillMissingPositions(data)) {
+                try {
+                    await api.put('/api/orgchart/save-positions', {
+                        updates: data.map(function(n) { return { id: n.id, x: n.x, y: n.y }; })
+                    });
+                    invalidate('/api/orgchart');
+                } catch(e) { /* 읽기 전용 실패 허용 */ }
+            }
             var size = _orgCalcCanvasSize(data);
             canvas.style.position = 'relative';
             canvas.style.width = size.w + 'px';
