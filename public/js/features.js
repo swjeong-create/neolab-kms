@@ -459,33 +459,37 @@ function _orgDrawLines(svgEl, data) {
             }
         });
 
-        // ─ 아래 배치 자식: 기존 버스 스타일
+        // ─ 아래 배치 자식: 고정 버스 Y로 안정적인 직교 라우팅
         if (belowChildren.length > 0) {
+            // 부모 하단에서 25px 아래를 버스로 고정 (자식 위치와 무관)
+            var busY = pyB + 25;
+            // 혹시 가장 가까운 자식이 busY보다 위쪽에 있으면 버스를 살짝 당김
             var minChildTop = Infinity;
             belowChildren.forEach(function(c) {
                 var cy = parseInt(c.y)||0;
                 if (cy < minChildTop) minChildTop = cy;
             });
-            // busY를 부모 하단에서 고정 오프셋(22px) + 자식보다 10px 위로 제한
-            var busY = Math.min(pyB + 22, minChildTop - 10);
-            if (busY < pyB + 6) busY = pyB + 6;
+            if (minChildTop - pyB < 25 + 6) {
+                busY = Math.max(pyB + 6, minChildTop - 6);
+            }
 
+            // 1) 부모 하단 → 버스 (수직)
             html += '<path d="M'+px+','+pyB+' L'+px+','+busY+'" fill="none" stroke="'+stroke+'" stroke-width="1.5"/>';
 
-            if (belowChildren.length > 1) {
-                var xs = belowChildren.map(function(c){ return (parseInt(c.x)||0) + NODE_W/2; });
-                xs.push(px);
-                var minX = Math.min.apply(null, xs);
-                var maxX = Math.max.apply(null, xs);
+            // 2) 가로 버스: 부모 cx와 모든 자식 cx를 포함하는 구간
+            var xs = belowChildren.map(function(c){ return (parseInt(c.x)||0) + NODE_W/2; });
+            xs.push(px);
+            var minX = Math.min.apply(null, xs);
+            var maxX = Math.max.apply(null, xs);
+            if (maxX > minX) {
                 html += '<path d="M'+minX+','+busY+' L'+maxX+','+busY+'" fill="none" stroke="'+stroke+'" stroke-width="1.5"/>';
             }
 
+            // 3) 각 자식: 버스 → 자식 상단 (수직 드롭)
             belowChildren.forEach(function(c) {
                 var cx = (parseInt(c.x)||0) + NODE_W/2;
                 var cy = parseInt(c.y)||0;
-                if (belowChildren.length === 1) {
-                    html += '<path d="M'+px+','+busY+' L'+cx+','+busY+' L'+cx+','+cy+'" fill="none" stroke="'+stroke+'" stroke-width="1.5"/>';
-                } else {
+                if (cy > busY) {
                     html += '<path d="M'+cx+','+busY+' L'+cx+','+cy+'" fill="none" stroke="'+stroke+'" stroke-width="1.5"/>';
                 }
             });
