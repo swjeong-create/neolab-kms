@@ -10,16 +10,23 @@ async function renderSidebarMenus() {
     var dynamicArea = document.getElementById('dynamicSidebarArea');
     var html = '';
 
+    // "인사 및 채용" 보드에 연락처/조직도를 자동 주입 (기존 카테고리와 나란히 노출)
+    var HR_HOST_BOARD = '인사 및 채용';
+
     boards.forEach(function(board) {
         pageNames[board.id] = '📋 ' + board.name;
-        var subHtml = '';
+        var isHrHost = (board.name || '').trim() === HR_HOST_BOARD;
+        var innerItems = '';
         if (categories[board.id] && categories[board.id].length > 0) {
-            subHtml += '<div class="submenu">';
             categories[board.id].forEach(function(cat) {
-                subHtml += '<div class="submenu-item" data-action="goto-board" data-board="' + board.id + '" data-cat="' + cat.id + '">' + cat.name + '</div>';
+                innerItems += '<div class="submenu-item" data-action="goto-board" data-board="' + board.id + '" data-cat="' + cat.id + '">' + cat.name + '</div>';
             });
-            subHtml += '</div>';
         }
+        if (isHrHost) {
+            innerItems += '<div class="submenu-item" data-action="goto-hr-contacts">연락처</div>';
+            innerItems += '<div class="submenu-item" data-action="goto-hr-org">조직도</div>';
+        }
+        var subHtml = innerItems ? ('<div class="submenu">' + innerItems + '</div>') : '';
         html += '<div class="menu-item" data-page="' + board.id + '">' +
             '<svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="' + (board.icon || 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z') + '"/></svg>' +
             '<span class="menu-text">' + board.name + '</span>' +
