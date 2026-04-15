@@ -722,6 +722,37 @@ function _orgHasManualPositions(data) {
     });
 }
 
+// 일부 노드만 좌표가 비어있을 때(신규 노드 등) 부모 기준으로 채워 넣음
+function _orgFillMissingPositions(data) {
+    if (!data || data.length === 0) return false;
+    var map = {};
+    data.forEach(function(n) { map[n.id] = n; });
+    var changed = false;
+    var siblingOffset = {};
+
+    // 부모 아래 같은 라인에 이미 존재하는 형제 수를 세어 x를 살짝 옮겨 겹침 방지
+    data.forEach(function(n) {
+        var x = parseInt(n.x) || 0, y = parseInt(n.y) || 0;
+        if (x > 0 || y > 0) return;
+        var p = n.parentId ? map[n.parentId] : null;
+        if (p) {
+            var px = parseInt(p.x) || 0, py = parseInt(p.y) || 0;
+            var key = n.parentId;
+            siblingOffset[key] = (siblingOffset[key] || 0);
+            var offsetIdx = siblingOffset[key];
+            n.x = String(px + offsetIdx * 150);
+            n.y = String(py + 90);
+            siblingOffset[key]++;
+            changed = true;
+        } else {
+            n.x = '400';
+            n.y = '40';
+            changed = true;
+        }
+    });
+    return changed;
+}
+
 async function loadOrgChart() {
     try {
         var data = await cachedGet('/api/orgchart');
@@ -734,6 +765,8 @@ async function loadOrgChart() {
         }
         // 수동 배치가 저장되어 있으면 그 좌표를 사용, 없으면 자동 트리 렌더
         if (_orgHasManualPositions(data)) {
+            // 일부 누락된 노드 좌표 보강 (읽기 전용 뷰이므로 서버 저장은 안 함)
+            _orgFillMissingPositions(data);
             var size = _orgCalcCanvasSize(data);
             canvas.style.position = 'relative';
             canvas.style.width = size.w + 'px';
@@ -786,6 +819,14 @@ async function loadAdminOrgCanvas() {
             });
             invalidate('/api/orgchart');
         } catch(e) { console.warn('초기 자동 배치 저장 실패:', e); }
+    } else if (_orgFillMissingPositions(data)) {
+        // 일부 노드만 좌표가 없으면 부모 아래로 배치 후 저장
+        try {
+            await api.put('/api/orgchart/save-positions', {
+                updates: data.map(function(n) { return { id: n.id, x: n.x, y: n.y }; })
+            });
+            invalidate('/api/orgchart');
+        } catch(e) { console.warn('누락 좌표 보강 저장 실패:', e); }
     }
 
     _orgNodes = data;
