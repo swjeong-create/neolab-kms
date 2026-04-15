@@ -37,7 +37,7 @@ async function renderSidebarMenus() {
                 if (n.indexOf(entry.kw[j].toLowerCase()) !== -1) return entry.path;
             }
         }
-        return DEFAULT_ICON;
+        return null;
     }
 
     function buildIconSvg(pathStr) {
@@ -61,7 +61,8 @@ async function renderSidebarMenus() {
             innerItems += '<div class="submenu-item" data-action="goto-hr-org">조직도</div>';
         }
         var subHtml = innerItems ? ('<div class="submenu">' + innerItems + '</div>') : '';
-        var iconPath = board.icon || pickIconPath(board.name);
+        // 보드명 키워드 매칭이 우선, 매칭 없으면 DB의 board.icon, 그것도 없으면 DEFAULT
+        var iconPath = pickIconPath(board.name) || board.icon || DEFAULT_ICON;
         html += '<div class="menu-item" data-page="' + board.id + '">' +
             buildIconSvg(iconPath) +
             '<span class="menu-text">' + board.name + '</span>' +
