@@ -125,9 +125,11 @@ router.post('/api/chat', requireAuth, async (req, res) => {
         }
 
         let context = '=== 관련 문서 (키워드 매칭 상위) ===\n';
-        topPosts.forEach(p => {
-            let doc = (p.content || '').substring(0, 600);
-            if (p.ocrText) doc += '\n[OCR] ' + p.ocrText.substring(0, 400);
+        topPosts.forEach((p, idx) => {
+            // 상위 5개 문서는 전문(최대 5000자), 나머지는 3000자
+            const limit = idx < 5 ? 5000 : 3000;
+            let doc = (p.content || '').substring(0, limit);
+            if (p.ocrText) doc += '\n[OCR] ' + p.ocrText.substring(0, 2000);
             context += `[DOC:${p.id}] 제목: ${p.title} | 게시판: ${boardMap[p.boardId] || ''} | 카테고리: ${catMap[p.categoryId] || ''} | 유형: ${p.type || 'text'} | 부가정보: ${p.subInfo || ''}\n내용: ${doc}\n\n`;
         });
 
