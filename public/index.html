@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=78">
+    <link rel="stylesheet" href="css/style.css?v=79">
     <!-- CSS is loaded from css/style.css -->
 </head>
 <body>
@@ -296,7 +296,10 @@
                     <div style="font-size:11px; opacity:0.8;">등록된 문서를 기반으로 답변합니다</div>
                 </div>
             </div>
-            <button onclick="toggleChatbot()" style="background:none; border:none; color:white; font-size:20px; cursor:pointer;">✕</button>
+            <div style="display:flex; gap:4px; align-items:center;">
+                <button onclick="resetChat()" title="대화 초기화" style="background:none; border:none; color:white; font-size:16px; cursor:pointer; padding:4px 8px; opacity:0.85;">↻</button>
+                <button onclick="toggleChatbot()" style="background:none; border:none; color:white; font-size:20px; cursor:pointer;">✕</button>
+            </div>
         </div>
         <div id="chatMessages" style="flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:12px; max-height:380px; min-height:200px;">
             <div style="background:rgba(255,103,32,0.08); padding:12px 16px; border-radius:12px; border-top-left-radius:4px; font-size:13px; color:var(--text-primary); max-width:85%;">
@@ -308,8 +311,8 @@
             </div>
         </div>
         <div style="padding:12px 16px; border-top:1px solid var(--border-color); display:flex; gap:8px;">
-            <input id="chatInput" type="text" placeholder="질문을 입력하세요..." style="flex:1; padding:10px 14px; border:1px solid var(--border-color); border-radius:24px; font-size:13px; outline:none; background:var(--main-bg); color:var(--text-primary);" onkeydown="if(event.key==='Enter')sendChat()">
-            <button onclick="sendChat()" style="width:40px; height:40px; border-radius:50%; background:var(--primary); color:white; border:none; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center;">➤</button>
+            <input id="chatInput" type="text" placeholder="질문 입력 (Enter 전송, Shift+Enter 줄바꿈)" maxlength="2000" style="flex:1; padding:10px 14px; border:1px solid var(--border-color); border-radius:24px; font-size:13px; outline:none; background:var(--main-bg); color:var(--text-primary);">
+            <button id="chatSendBtn" onclick="sendChat()" style="width:40px; height:40px; border-radius:50%; background:var(--primary); color:white; border:none; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center;">➤</button>
         </div>
     </div>
 
@@ -1039,13 +1042,13 @@
     </div>
 
 <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
-<script src="js/core.js?v=78"></script>
-<script src="js/navigation.js?v=78"></script>
-<script src="js/search.js?v=78"></script>
-<script src="js/viewer.js?v=78"></script>
-<script src="js/board.js?v=78"></script>
-<script src="js/features.js?v=78"></script>
-<script src="js/app.js?v=78"></script>
-<script src="js/admin.js?v=78"></script>
+<script src="js/core.js?v=79"></script>
+<script src="js/navigation.js?v=79"></script>
+<script src="js/search.js?v=79"></script>
+<script src="js/viewer.js?v=79"></script>
+<script src="js/board.js?v=79"></script>
+<script src="js/features.js?v=79"></script>
+<script src="js/app.js?v=79"></script>
+<script src="js/admin.js?v=79"></script>
 </body>
 </html>
