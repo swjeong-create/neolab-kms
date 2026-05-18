@@ -3,19 +3,37 @@
 ========================================== */
 let currentViewerPost = null;
 
+// kms-html-content iframe에서 src URL 추출 (전체화면 보기 링크용)
+function extractIframeSrc(content) {
+    var m = (content || '').match(/<iframe[^>]*\bsrc\s*=\s*["']([^"']+)["']/i);
+    return m ? m[1] : '';
+}
+// "전체화면으로 보기" 버튼 HTML 생성
+function buildFullscreenLink(content, align) {
+    var src = extractIframeSrc(content);
+    if (!src) return '';
+    return '<div style="text-align:' + (align || 'right') + '; padding: 12px 16px;">'
+         + '<a href="' + src + '" target="_blank" rel="noopener" '
+         + 'style="display:inline-block; padding:8px 16px; background:var(--primary,#ff6720); color:#fff; '
+         + 'border-radius:6px; text-decoration:none; font-size:13px; font-weight:500;">'
+         + '↗ 전체화면으로 보기</a></div>';
+}
 // HTML iframe(kms-html-content) 콘텐츠는 부모 padding을 negative margin으로 상쇄해 풀폭 렌더
 // 그 외 일반 텍스트/HTML 본문은 기존 mobile-inline-text 스타일 유지 (인라인 뷰용)
 function renderInlineContent(content) {
     if (/<iframe[^>]*class\s*=\s*["'][^"']*kms-html-content/i.test(content || '')) {
-        // mobile-inline-body의 14px padding 상쇄로 edge-to-edge
-        return '<div style="margin:-14px -14px 0; background:#fff; border-radius:0 0 12px 12px; overflow:hidden;">' + content + '</div>';
+        // mobile-inline-body의 14px padding 상쇄로 edge-to-edge + 전체화면 링크
+        return buildFullscreenLink(content, 'center')
+             + '<div style="margin:0 -14px 0; background:#fff; overflow:hidden;">' + content + '</div>';
     }
     return '<div class="mobile-inline-text">' + content + '</div>';
 }
-// 데스크톱 상세 뷰용 — kms-html-content는 카드 래퍼 없이 풀폭, 일반 텍스트는 카드 안에
+// 데스크톱 상세 뷰용 — kms-html-content는 .content padding(32px)을 상쇄해 최대 폭으로 렌더
+// + "전체화면으로 보기" 버튼 추가 (원본 standalone 페이지처럼 보고 싶을 때)
 function renderDetailContent(content) {
     if (/<iframe[^>]*class\s*=\s*["'][^"']*kms-html-content/i.test(content || '')) {
-        return content;
+        return buildFullscreenLink(content, 'right')
+             + '<div style="width:calc(100% + 64px); margin:0 -32px; background:#fff; border-radius:0;">' + content + '</div>';
     }
     return '<div style="padding:24px; background:var(--card-bg); border-radius:12px; border:1px solid var(--border-color); font-size:15px; line-height:1.8; color:var(--text-primary); white-space:pre-wrap;">' + content + '</div>';
 }
