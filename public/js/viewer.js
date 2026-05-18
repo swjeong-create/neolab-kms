@@ -8,15 +8,57 @@ function extractIframeSrc(content) {
     var m = (content || '').match(/<iframe[^>]*\bsrc\s*=\s*["']([^"']+)["']/i);
     return m ? m[1] : '';
 }
-// "전체화면으로 보기" 버튼 HTML 생성
+// iframe을 95vw × 95vh 모달로 크게 펼쳐 보기 (KMS 사이드바·padding 제약 무시)
+window.openHtmlPreviewModal = function(src) {
+    if (!src) return;
+    // 기존 모달이 있으면 먼저 제거 (중복 방지)
+    var existing = document.querySelector('.html-preview-overlay');
+    if (existing) existing.remove();
+
+    var overlay = document.createElement('div');
+    overlay.className = 'html-preview-overlay';
+    overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:99999; display:flex; flex-direction:column; padding:24px; box-sizing:border-box; animation: fadeIn 0.2s;';
+
+    var header = document.createElement('div');
+    header.style.cssText = 'display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; color:#fff; flex-shrink:0;';
+    header.innerHTML = '<span style="font-size:14px; opacity:0.9;">🔍 넓게 보기</span>'
+                    + '<div style="display:flex; gap:8px;">'
+                    +   '<a href="' + src + '" target="_blank" rel="noopener" style="background:rgba(255,255,255,0.15); color:#fff; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; text-decoration:none;">↗ 새 탭에서 열기</a>'
+                    +   '<button type="button" class="html-preview-close" style="background:rgba(255,255,255,0.2); color:#fff; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px;">✕ 닫기 (ESC)</button>'
+                    + '</div>';
+
+    var iframe = document.createElement('iframe');
+    iframe.src = src;
+    iframe.style.cssText = 'flex:1; width:100%; border:none; border-radius:8px; background:#fff; box-shadow:0 8px 40px rgba(0,0,0,0.5);';
+
+    overlay.appendChild(header);
+    overlay.appendChild(iframe);
+    document.body.appendChild(overlay);
+
+    // 닫기: 버튼 / 배경 클릭 / ESC
+    function close() {
+        overlay.remove();
+        document.removeEventListener('keydown', escHandler);
+    }
+    function escHandler(e) { if (e.key === 'Escape') close(); }
+    overlay.querySelector('.html-preview-close').addEventListener('click', close);
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) close(); });
+    document.addEventListener('keydown', escHandler);
+};
+// "넓게 보기" 버튼 + "새 탭" 링크 — kms-html-content iframe 위에 표시
 function buildFullscreenLink(content, align) {
     var src = extractIframeSrc(content);
     if (!src) return '';
-    return '<div style="text-align:' + (align || 'right') + '; padding: 12px 16px;">'
+    var justify = (align === 'center') ? 'center' : (align === 'left' ? 'flex-start' : 'flex-end');
+    return '<div style="padding:12px 16px; display:flex; justify-content:' + justify + '; gap:8px; flex-wrap:wrap;">'
+         + '<button type="button" onclick="openHtmlPreviewModal(\'' + src + '\')" '
+         + 'style="padding:8px 16px; background:var(--primary,#ff6720); color:#fff; border:none; '
+         + 'border-radius:6px; cursor:pointer; font-size:13px; font-weight:500;">'
+         + '🔍 넓게 보기</button>'
          + '<a href="' + src + '" target="_blank" rel="noopener" '
-         + 'style="display:inline-block; padding:8px 16px; background:var(--primary,#ff6720); color:#fff; '
+         + 'style="padding:8px 16px; background:var(--brand-gray,#6b7280); color:#fff; '
          + 'border-radius:6px; text-decoration:none; font-size:13px; font-weight:500;">'
-         + '↗ 전체화면으로 보기</a></div>';
+         + '↗ 새 탭</a></div>';
 }
 // HTML iframe(kms-html-content) 콘텐츠는 부모 padding을 negative margin으로 상쇄해 풀폭 렌더
 // 그 외 일반 텍스트/HTML 본문은 기존 mobile-inline-text 스타일 유지 (인라인 뷰용)
