@@ -117,6 +117,10 @@ async function toggleInlineExpand(id) {
                     html += imgTag.replace('<img ', '<img onclick="openLightbox(this.src, \'' + post.title.replace(/'/g, "\\'") + '\')" ');
                 }
             });
+            // 이미지 + 텍스트 동시 등록 지원: 이미지 아래에 본문 함께 표시
+            if (post.content && post.content.indexOf('[') !== 0) {
+                html += '<div class="mobile-inline-text">' + post.content + '</div>';
+            }
         }
         // 텍스트
         else if (post.content) {
@@ -250,10 +254,18 @@ async function openProductDetail(post, catName) {
                 html += imgTag;
             }
         });
+        // 이미지 + 텍스트 동시 등록 지원: 이미지 아래에 본문 함께 표시
+        if (post.content && post.content.indexOf('[') !== 0) {
+            html += '<div style="margin-top:16px; padding:24px; background:var(--card-bg); border-radius:12px; border:1px solid var(--border-color); font-size:15px; line-height:1.8; color:var(--text-primary); white-space:pre-wrap;">' + post.content + '</div>';
+        }
     }
     // 5. 썸네일 이미지만 있는 경우
     else if (post.thumbnail) {
         html += '<img src="/api/files/' + encodeURIComponent(post.thumbnail) + '" alt="' + post.title + '" style="max-width:100%; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.1); background:#fff;">';
+        // 썸네일 + 텍스트 동시 등록 지원
+        if (post.content && post.content.indexOf('[') !== 0) {
+            html += '<div style="margin-top:16px; padding:24px; background:var(--card-bg); border-radius:12px; border:1px solid var(--border-color); font-size:15px; line-height:1.8; color:var(--text-primary); white-space:pre-wrap;">' + post.content + '</div>';
+        }
     }
     // 5. 텍스트 내용
     else if (post.content) {

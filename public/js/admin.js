@@ -428,7 +428,8 @@ window.toggleWriteFields = function() {
     document.getElementById('writeUrlGroup').style.display = (['url','link'].includes(type)) ? 'block' : 'none';
     document.getElementById('writeFileGroup').style.display = (['pdf','docx','xlsx','pptx'].includes(type)) ? 'block' : 'none';
     var contentGroup = document.getElementById('writeContentGroup');
-    if (contentGroup) contentGroup.style.display = (type === 'text') ? 'block' : 'none';
+    // 이미지 타입에서도 텍스트(content)를 함께 입력 가능
+    if (contentGroup) contentGroup.style.display = (type === 'text' || type === 'images') ? 'block' : 'none';
     var imagesGroup = document.getElementById('writeImagesGroup');
     if (imagesGroup) imagesGroup.style.display = (type === 'images') ? 'block' : 'none';
     // 파일 유형이면 드롭존 텍스트 업데이트
@@ -1931,7 +1932,8 @@ window.togglePostFields = function() {
     var type = document.getElementById('postType').value;
     document.getElementById('postUrlGroup').style.display = ['url','link','docx','xlsx','pptx'].includes(type) ? 'block' : 'none';
     document.getElementById('postPdfGroup').style.display = type === 'pdf' ? 'block' : 'none';
-    document.getElementById('postContentGroup').style.display = type === 'text' ? 'block' : 'none';
+    // 이미지 타입에서도 텍스트(content)를 함께 입력 가능
+    document.getElementById('postContentGroup').style.display = (type === 'text' || type === 'images') ? 'block' : 'none';
     var postImgGroup = document.getElementById('postImagesGroup');
     if (postImgGroup) postImgGroup.style.display = (type === 'images') ? 'block' : 'none';
 };
@@ -1986,7 +1988,8 @@ if (addPostBtnEl) addPostBtnEl.addEventListener('click', async function() {
     addBtn.disabled = true; addBtn.style.opacity = '0.6'; addBtn.style.cursor = 'not-allowed'; addBtn.textContent = '저장 중...';
 
     var postData = { boardId: boardId, categoryId: categoryId, type: type, title: title, icon: icon, subInfo: subInfo,
-        content: type === 'text' ? content : '',
+        // 텍스트와 이미지 타입 모두 본문(content) 저장 — 이미지+텍스트 동시 등록 지원
+        content: (type === 'text' || type === 'images') ? content : '',
         url: ['url','link','docx','xlsx','pptx'].includes(type) ? url : '',
         fileName: type === 'pdf' ? fileName : ''
     };
