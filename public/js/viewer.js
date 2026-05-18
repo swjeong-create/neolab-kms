@@ -3,6 +3,23 @@
 ========================================== */
 let currentViewerPost = null;
 
+// HTML iframe(kms-html-content) 콘텐츠는 부모 padding을 negative margin으로 상쇄해 풀폭 렌더
+// 그 외 일반 텍스트/HTML 본문은 기존 mobile-inline-text 스타일 유지 (인라인 뷰용)
+function renderInlineContent(content) {
+    if (/<iframe[^>]*class\s*=\s*["'][^"']*kms-html-content/i.test(content || '')) {
+        // mobile-inline-body의 14px padding 상쇄로 edge-to-edge
+        return '<div style="margin:-14px -14px 0; background:#fff; border-radius:0 0 12px 12px; overflow:hidden;">' + content + '</div>';
+    }
+    return '<div class="mobile-inline-text">' + content + '</div>';
+}
+// 데스크톱 상세 뷰용 — kms-html-content는 카드 래퍼 없이 풀폭, 일반 텍스트는 카드 안에
+function renderDetailContent(content) {
+    if (/<iframe[^>]*class\s*=\s*["'][^"']*kms-html-content/i.test(content || '')) {
+        return content;
+    }
+    return '<div style="padding:24px; background:var(--card-bg); border-radius:12px; border:1px solid var(--border-color); font-size:15px; line-height:1.8; color:var(--text-primary); white-space:pre-wrap;">' + content + '</div>';
+}
+
 
 // ─── 갤러리 라이트박스 ───
 window.openGalleryPreview = async function(id) {
@@ -119,12 +136,12 @@ async function toggleInlineExpand(id) {
             });
             // 이미지 + 텍스트 동시 등록 지원: 이미지 아래에 본문 함께 표시
             if (post.content && post.content.indexOf('[') !== 0) {
-                html += '<div class="mobile-inline-text">' + post.content + '</div>';
+                html += renderInlineContent(post.content);
             }
         }
         // 텍스트
         else if (post.content) {
-            html += '<div class="mobile-inline-text">' + post.content + '</div>';
+            html += renderInlineContent(post.content);
         }
         else {
             html += '<p style="color:var(--text-light);padding:20px;text-align:center;">등록된 내용이 없습니다.</p>';
@@ -267,9 +284,9 @@ async function openProductDetail(post, catName) {
             html += '<div style="margin-top:16px; padding:24px; background:var(--card-bg); border-radius:12px; border:1px solid var(--border-color); font-size:15px; line-height:1.8; color:var(--text-primary); white-space:pre-wrap;">' + post.content + '</div>';
         }
     }
-    // 5. 텍스트 내용
+    // 5. 텍스트 내용 — kms-html-content iframe은 카드 래퍼 없이 풀폭으로 렌더
     else if (post.content) {
-        html += '<div style="padding:24px; background:var(--card-bg); border-radius:12px; border:1px solid var(--border-color); font-size:15px; line-height:1.8; color:var(--text-primary); white-space:pre-wrap;">' + post.content + '</div>';
+        html += renderDetailContent(post.content);
     }
     // 6. 내용 없음
     else {
