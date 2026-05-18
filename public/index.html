@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=131">
+    <link rel="stylesheet" href="css/style.css?v=132">
     <!-- CSS is loaded from css/style.css -->
 </head>
 <body>
@@ -570,7 +570,12 @@
                         <div id="postImagesStatus" style="font-size:12px; color:var(--text-light); margin-top:4px;"></div>
                     </div>
                     <div class="admin-form-group" id="postContentGroup">
-                        <label for="postContent">상세 내용 (모달창 텍스트, 이미지 타입과 함께 등록 가능)</label>
+                        <label for="postContent" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                            <span>상세 내용 (모달창 텍스트, 이미지 타입과 함께 등록 가능)</span>
+                            <button type="button" onclick="document.getElementById('postContentHtmlFile').click()" style="padding:4px 10px; background:var(--brand-gray,#6b7280); color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:12px; font-weight:500;">📁 HTML 파일 불러오기</button>
+                            <input type="file" id="postContentHtmlFile" accept=".html,.htm,text/html" style="display:none;" onchange="loadHtmlFileToTextarea(this, 'postContent', 'postContentHtmlStatus')">
+                            <span id="postContentHtmlStatus" style="font-size:12px; color:var(--text-light);"></span>
+                        </label>
                         <textarea id="postContent" placeholder="상세 내용을 입력하세요 (줄바꿈은 <br> 태그, 표는 HTML 태그 사용). 이미지 타입을 선택해도 본문을 함께 등록할 수 있습니다."></textarea>
                     </div>
                     <button type="button" class="admin-btn admin-btn-success" id="addPostBtn">게시물 등록</button>
@@ -992,7 +997,12 @@
                     </div>
                 </div>
                 <div class="write-form-group" id="writeContentGroup">
-                    <label>내용</label>
+                    <label style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        <span>내용</span>
+                        <button type="button" onclick="document.getElementById('writeContentHtmlFile').click()" style="padding:4px 10px; background:var(--brand-gray,#6b7280); color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:12px; font-weight:500;">📁 HTML 파일 불러오기</button>
+                        <input type="file" id="writeContentHtmlFile" accept=".html,.htm,text/html" style="display:none;" onchange="loadHtmlFileToTextarea(this, 'writeContent', 'writeContentHtmlStatus')">
+                        <span id="writeContentHtmlStatus" style="font-size:12px; color:var(--text-light);"></span>
+                    </label>
                     <textarea id="writeContent" placeholder="게시물 내용을 입력하세요..."></textarea>
                 </div>
             </div>
@@ -1136,13 +1146,13 @@
     </script>
 
 <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
-<script src="js/core.js?v=131"></script>
-<script src="js/navigation.js?v=131"></script>
-<script src="js/search.js?v=131"></script>
-<script src="js/viewer.js?v=131"></script>
-<script src="js/board.js?v=131"></script>
-<script src="js/features.js?v=131"></script>
-<script src="js/app.js?v=131"></script>
-<script src="js/admin.js?v=131"></script>
+<script src="js/core.js?v=132"></script>
+<script src="js/navigation.js?v=132"></script>
+<script src="js/search.js?v=132"></script>
+<script src="js/viewer.js?v=132"></script>
+<script src="js/board.js?v=132"></script>
+<script src="js/features.js?v=132"></script>
+<script src="js/app.js?v=132"></script>
+<script src="js/admin.js?v=132"></script>
 </body>
 </html>

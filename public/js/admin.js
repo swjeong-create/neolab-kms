@@ -1938,6 +1938,57 @@ window.togglePostFields = function() {
     if (postImgGroup) postImgGroup.style.display = (type === 'images') ? 'block' : 'none';
 };
 
+// HTML 파일을 읽어 textarea에 자동 채우기 (관리자 본문 입력 도우미)
+// - <body>가 있으면 body 내부만 추출 (full-document 래퍼 제거)
+// - <script>, <iframe>, <meta>, <link>, 인라인 on* 이벤트는 보안상 제거
+// - <style>, <table>, <img> 등은 그대로 유지 (관리자가 검토·수정 후 저장)
+window.loadHtmlFileToTextarea = function(input, targetId, statusId) {
+    if (!input.files || !input.files[0]) return;
+    var f = input.files[0];
+    var status = statusId ? document.getElementById(statusId) : null;
+    var maxSize = 2 * 1024 * 1024; // 2MB
+    if (f.size > maxSize) {
+        alert('HTML 파일이 너무 큽니다 (최대 2MB).');
+        input.value = '';
+        return;
+    }
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        var target = document.getElementById(targetId);
+        if (!target) return;
+        var raw = e.target.result || '';
+        // 1) <body>...</body> 안쪽만 추출 (없으면 전체 사용)
+        var bodyMatch = raw.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+        var content = bodyMatch ? bodyMatch[1] : raw;
+        // 2) HTML 코멘트 / DOCTYPE / <html>·<head>·<body> 태그 제거 (찌꺼기 정리)
+        content = content.replace(/<!DOCTYPE[^>]*>/gi, '');
+        content = content.replace(/<!--[\s\S]*?-->/g, '');
+        content = content.replace(/<\/?(html|head|body)[^>]*>/gi, '');
+        // 3) 보안: 스크립트·iframe·meta·link 제거
+        content = content.replace(/<script[\s\S]*?<\/script>/gi, '');
+        content = content.replace(/<iframe[\s\S]*?<\/iframe>/gi, '');
+        content = content.replace(/<meta[^>]*>/gi, '');
+        content = content.replace(/<link[^>]*>/gi, '');
+        // 4) 인라인 이벤트 핸들러 (onclick, onerror, onload 등) 제거
+        content = content.replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, '');
+        content = content.replace(/\son[a-z]+\s*=\s*'[^']*'/gi, '');
+        content = content.replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, '');
+        // 5) javascript: URL 차단
+        content = content.replace(/(href|src)\s*=\s*"javascript:[^"]*"/gi, '$1="#"');
+        content = content.replace(/(href|src)\s*=\s*'javascript:[^']*'/gi, "$1='#'");
+
+        target.value = content.trim();
+        if (status) status.textContent = '✓ ' + f.name + ' 불러옴 (' + content.length.toLocaleString() + '자)';
+    };
+    reader.onerror = function() {
+        if (status) status.textContent = '✗ 읽기 실패';
+        alert('HTML 파일 읽기 실패');
+    };
+    reader.readAsText(f, 'utf-8');
+    // 같은 파일을 다시 선택해도 onchange 발화하도록 초기화
+    input.value = '';
+};
+
 // 아이콘 이미지 선택 → 즉시 미리보기
 var _postIconImgEl = document.getElementById('postIconImage');
 if (_postIconImgEl) _postIconImgEl.addEventListener('change', function() {
