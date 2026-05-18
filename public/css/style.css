@@ -1203,7 +1203,8 @@
             #productDetailTitle { font-size: 20px !important; line-height: 1.3; font-weight: 800; }
             #productDetailSub { font-size: 12px !important; flex-wrap: wrap; gap: 4px; }
             #productDetailImages img { border-radius: 10px !important; margin-bottom: 12px !important; box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important; }
-            #productDetailImages iframe { height: 72vh !important; border-radius: 10px !important; }
+            #productDetailImages iframe:not(.kms-html-content) { height: 72vh !important; border-radius: 10px !important; }
+            #productDetailImages iframe.kms-html-content { border-radius: 10px !important; }
 
             /* 게시판 메인 타이틀 간소화 */
             #boardMainTitle { font-size: 18px !important; margin-bottom: 4px !important; font-weight: 700 !important; }
@@ -1361,7 +1362,7 @@
             body.dark-mode .mobile-inline-body img { background: #1c1c1e; }
             .mobile-inline-body img:last-of-type { margin-bottom: 0; }
 
-            .mobile-inline-body iframe {
+            .mobile-inline-body iframe:not(.kms-html-content) {
                 width: 100%;
                 height: 65vh;
                 border: none;

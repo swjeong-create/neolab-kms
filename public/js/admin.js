@@ -1942,10 +1942,11 @@ window.togglePostFields = function() {
 //
 // 두 가지 모드 자동 선택:
 //  1) "전체 페이지 모드" — 파일에 <html>·<body>·<style> 중 하나라도 있으면
-//     <iframe srcdoc>으로 감싸 통째로 렌더 (스타일이 사이트 CSS와 충돌 X, 원본 그대로 표시)
-//  2) "단편 모드" — <body> 같은 래퍼가 없으면 그대로 본문에 삽입 (간단한 <table>/<br> 등)
+//     정화된 HTML을 서버에 업로드하고 <iframe src="/api/files/...">로 임베드.
+//     (srcdoc 인코딩 이슈 없음, 브라우저가 원본 그대로 렌더 → 디자인 100% 보존)
+//  2) "단편 모드" — <body>가 없는 짧은 조각이면 그대로 textarea에 삽입
 //
-// 보안: <script>, <iframe>, <meta>, <link>, 인라인 on* 이벤트, javascript: URL은 항상 제거
+// 보안: <script>, <iframe>, 위험 <meta>, <link>, 인라인 on* 이벤트, javascript: URL은 업로드 전 제거
 window.loadHtmlFileToTextarea = function(input, targetId, statusId) {
     if (!input.files || !input.files[0]) return;
     var f = input.files[0];
@@ -1957,16 +1958,17 @@ window.loadHtmlFileToTextarea = function(input, targetId, statusId) {
         return;
     }
     var reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = async function(e) {
         var target = document.getElementById(targetId);
         if (!target) return;
         var raw = e.target.result || '';
 
         // === 공통 보안 정화 ===
+        // 주의: <meta charset>·<meta viewport>는 인코딩/모바일 대응에 필요해 유지 (http-equiv만 제거)
         var safe = raw
             .replace(/<script[\s\S]*?<\/script>/gi, '')
             .replace(/<iframe[\s\S]*?<\/iframe>/gi, '')
-            .replace(/<meta[^>]*>/gi, '')
+            .replace(/<meta\s+http-equiv[^>]*>/gi, '')
             .replace(/<link[^>]*>/gi, '')
             .replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, '')
             .replace(/\son[a-z]+\s*=\s*'[^']*'/gi, '')
@@ -1977,29 +1979,43 @@ window.loadHtmlFileToTextarea = function(input, targetId, statusId) {
         // === 전체 페이지 여부 감지 ===
         var isFullDoc = /<html[\s>]/i.test(safe) || /<body[\s>]/i.test(safe) || /<style[\s>]/i.test(safe);
 
-        var content;
         if (isFullDoc) {
-            // srcdoc 속성 인코딩: & 와 " 만 escape (HTML 구조는 보존)
-            var escaped = safe
-                .replace(/&/g, '&amp;')
-                .replace(/"/g, '&quot;');
-            // 컨텐츠 높이에 맞춰 자동 리사이즈 (srcdoc는 부모와 same-origin이라 접근 가능)
-            var onload = 'try{var d=this.contentDocument;var h=(d.documentElement&&d.documentElement.scrollHeight)||(d.body&&d.body.scrollHeight)||0;if(h)this.style.height=(h+24)+\'px\'}catch(e){}';
-            content = '<iframe srcdoc="' + escaped + '"'
-                   + ' onload="' + onload + '"'
-                   + ' style="width:100%; height:1200px; border:none; display:block; background:#fff; border-radius:8px;"></iframe>';
-            if (status) status.textContent = '✓ ' + f.name + ' (전체 페이지 모드, ' + safe.length.toLocaleString() + '자)';
+            // 파일 업로드 → iframe src로 임베드
+            if (status) status.textContent = '업로드 중...';
+            try {
+                // 정화된 HTML을 새 Blob으로 만들어 .html 파일로 업로드
+                // (원본 파일 그대로가 아니라 정화 후 업로드 — 서버에 위험 코드가 남지 않게)
+                var blob = new Blob([safe], { type: 'text/html' });
+                var safeName = f.name.replace(/[^\w.-]/g, '_').replace(/\.htm$/i, '.html');
+                if (!/\.html?$/i.test(safeName)) safeName += '.html';
+                var fd = new FormData();
+                fd.append('file', blob, safeName);
+                var res = await fetch('/api/upload', { method: 'POST', body: fd });
+                var data = await res.json();
+                if (!res.ok || data.error || !data.fileName) {
+                    throw new Error((data && data.error) || ('HTTP ' + res.status));
+                }
+                // 자동 리사이즈: scrollHeight를 inline !important로 설정해 CSS 강제 높이를 override
+                var onload = 'try{var d=this.contentDocument;var h=(d&&d.documentElement&&d.documentElement.scrollHeight)||(d&&d.body&&d.body.scrollHeight)||0;if(h)this.style.setProperty(\'height\',(h+24)+\'px\',\'important\')}catch(e){}';
+                target.value = '<iframe class="kms-html-content" src="/api/files/' + encodeURIComponent(data.fileName) + '"'
+                            + ' onload="' + onload + '"'
+                            + ' style="width:100%; height:1500px; border:none; display:block; background:#fff; border-radius:8px;"></iframe>';
+                if (status) status.textContent = '✓ ' + f.name + ' (전체 페이지 모드 — 파일 업로드 ' + (safe.length / 1024).toFixed(1) + 'KB)';
+            } catch (err) {
+                var msg = (err && err.message) || String(err);
+                if (status) status.textContent = '✗ 업로드 실패: ' + msg;
+                alert('HTML 파일 업로드 실패: ' + msg);
+            }
         } else {
-            // 단편 HTML: 찌꺼기 정리 후 그대로
-            content = safe
+            // 단편 HTML: 찌꺼기 정리 후 textarea에 그대로
+            var content = safe
                 .replace(/<!DOCTYPE[^>]*>/gi, '')
                 .replace(/<!--[\s\S]*?-->/g, '')
                 .replace(/<\/?(html|head|body)[^>]*>/gi, '')
                 .trim();
-            if (status) status.textContent = '✓ ' + f.name + ' (' + content.length.toLocaleString() + '자)';
+            target.value = content;
+            if (status) status.textContent = '✓ ' + f.name + ' (단편 모드, ' + content.length.toLocaleString() + '자)';
         }
-
-        target.value = content;
     };
     reader.onerror = function() {
         if (status) status.textContent = '✗ 읽기 실패';
