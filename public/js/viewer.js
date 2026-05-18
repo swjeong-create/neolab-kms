@@ -30,12 +30,17 @@ function renderInlineContent(content) {
 }
 // 데스크톱 상세 뷰용 — kms-html-content는 .content padding(32px)을 상쇄해 최대 폭으로 렌더
 // + "전체화면으로 보기" 버튼 추가 (원본 standalone 페이지처럼 보고 싶을 때)
-function renderDetailContent(content) {
+// opts.marginTop: 위 콘텐츠(이미지 등)와의 간격 (이미지+iframe 동시 등록 시 필요)
+function renderDetailContent(content, opts) {
+    opts = opts || {};
+    var mtStyle = opts.marginTop ? 'margin-top:' + opts.marginTop + 'px;' : '';
     if (/<iframe[^>]*class\s*=\s*["'][^"']*kms-html-content/i.test(content || '')) {
-        return buildFullscreenLink(content, 'right')
-             + '<div style="width:calc(100% + 64px); margin:0 -32px; background:#fff; border-radius:0;">' + content + '</div>';
+        return '<div style="' + mtStyle + '">'
+             + buildFullscreenLink(content, 'right')
+             + '<div style="width:calc(100% + 64px); margin:0 -32px; background:#fff; border-radius:0;">' + content + '</div>'
+             + '</div>';
     }
-    return '<div style="padding:24px; background:var(--card-bg); border-radius:12px; border:1px solid var(--border-color); font-size:15px; line-height:1.8; color:var(--text-primary); white-space:pre-wrap;">' + content + '</div>';
+    return '<div style="' + mtStyle + ' padding:24px; background:var(--card-bg); border-radius:12px; border:1px solid var(--border-color); font-size:15px; line-height:1.8; color:var(--text-primary); white-space:pre-wrap;">' + content + '</div>';
 }
 
 
@@ -289,17 +294,17 @@ async function openProductDetail(post, catName) {
                 html += imgTag;
             }
         });
-        // 이미지 + 텍스트 동시 등록 지원: 이미지 아래에 본문 함께 표시
+        // 이미지 + 텍스트 동시 등록 지원: 이미지 아래에 본문 함께 표시 (iframe도 풀폭 렌더링)
         if (post.content && post.content.indexOf('[') !== 0) {
-            html += '<div style="margin-top:16px; padding:24px; background:var(--card-bg); border-radius:12px; border:1px solid var(--border-color); font-size:15px; line-height:1.8; color:var(--text-primary); white-space:pre-wrap;">' + post.content + '</div>';
+            html += renderDetailContent(post.content, {marginTop: 16});
         }
     }
     // 5. 썸네일 이미지만 있는 경우
     else if (post.thumbnail) {
         html += '<img src="/api/files/' + encodeURIComponent(post.thumbnail) + '" alt="' + post.title + '" style="max-width:100%; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.1); background:#fff;">';
-        // 썸네일 + 텍스트 동시 등록 지원
+        // 썸네일 + 텍스트 동시 등록 지원 (iframe도 풀폭 렌더링)
         if (post.content && post.content.indexOf('[') !== 0) {
-            html += '<div style="margin-top:16px; padding:24px; background:var(--card-bg); border-radius:12px; border:1px solid var(--border-color); font-size:15px; line-height:1.8; color:var(--text-primary); white-space:pre-wrap;">' + post.content + '</div>';
+            html += renderDetailContent(post.content, {marginTop: 16});
         }
     }
     // 5. 텍스트 내용 — kms-html-content iframe은 카드 래퍼 없이 풀폭으로 렌더
