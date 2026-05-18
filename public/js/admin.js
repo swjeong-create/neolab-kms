@@ -1939,9 +1939,13 @@ window.togglePostFields = function() {
 };
 
 // HTML 파일을 읽어 textarea에 자동 채우기 (관리자 본문 입력 도우미)
-// - <body>가 있으면 body 내부만 추출 (full-document 래퍼 제거)
-// - <script>, <iframe>, <meta>, <link>, 인라인 on* 이벤트는 보안상 제거
-// - <style>, <table>, <img> 등은 그대로 유지 (관리자가 검토·수정 후 저장)
+//
+// 두 가지 모드 자동 선택:
+//  1) "전체 페이지 모드" — 파일에 <html>·<body>·<style> 중 하나라도 있으면
+//     <iframe srcdoc>으로 감싸 통째로 렌더 (스타일이 사이트 CSS와 충돌 X, 원본 그대로 표시)
+//  2) "단편 모드" — <body> 같은 래퍼가 없으면 그대로 본문에 삽입 (간단한 <table>/<br> 등)
+//
+// 보안: <script>, <iframe>, <meta>, <link>, 인라인 on* 이벤트, javascript: URL은 항상 제거
 window.loadHtmlFileToTextarea = function(input, targetId, statusId) {
     if (!input.files || !input.files[0]) return;
     var f = input.files[0];
@@ -1957,28 +1961,45 @@ window.loadHtmlFileToTextarea = function(input, targetId, statusId) {
         var target = document.getElementById(targetId);
         if (!target) return;
         var raw = e.target.result || '';
-        // 1) <body>...</body> 안쪽만 추출 (없으면 전체 사용)
-        var bodyMatch = raw.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-        var content = bodyMatch ? bodyMatch[1] : raw;
-        // 2) HTML 코멘트 / DOCTYPE / <html>·<head>·<body> 태그 제거 (찌꺼기 정리)
-        content = content.replace(/<!DOCTYPE[^>]*>/gi, '');
-        content = content.replace(/<!--[\s\S]*?-->/g, '');
-        content = content.replace(/<\/?(html|head|body)[^>]*>/gi, '');
-        // 3) 보안: 스크립트·iframe·meta·link 제거
-        content = content.replace(/<script[\s\S]*?<\/script>/gi, '');
-        content = content.replace(/<iframe[\s\S]*?<\/iframe>/gi, '');
-        content = content.replace(/<meta[^>]*>/gi, '');
-        content = content.replace(/<link[^>]*>/gi, '');
-        // 4) 인라인 이벤트 핸들러 (onclick, onerror, onload 등) 제거
-        content = content.replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, '');
-        content = content.replace(/\son[a-z]+\s*=\s*'[^']*'/gi, '');
-        content = content.replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, '');
-        // 5) javascript: URL 차단
-        content = content.replace(/(href|src)\s*=\s*"javascript:[^"]*"/gi, '$1="#"');
-        content = content.replace(/(href|src)\s*=\s*'javascript:[^']*'/gi, "$1='#'");
 
-        target.value = content.trim();
-        if (status) status.textContent = '✓ ' + f.name + ' 불러옴 (' + content.length.toLocaleString() + '자)';
+        // === 공통 보안 정화 ===
+        var safe = raw
+            .replace(/<script[\s\S]*?<\/script>/gi, '')
+            .replace(/<iframe[\s\S]*?<\/iframe>/gi, '')
+            .replace(/<meta[^>]*>/gi, '')
+            .replace(/<link[^>]*>/gi, '')
+            .replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, '')
+            .replace(/\son[a-z]+\s*=\s*'[^']*'/gi, '')
+            .replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, '')
+            .replace(/(href|src)\s*=\s*"javascript:[^"]*"/gi, '$1="#"')
+            .replace(/(href|src)\s*=\s*'javascript:[^']*'/gi, "$1='#'");
+
+        // === 전체 페이지 여부 감지 ===
+        var isFullDoc = /<html[\s>]/i.test(safe) || /<body[\s>]/i.test(safe) || /<style[\s>]/i.test(safe);
+
+        var content;
+        if (isFullDoc) {
+            // srcdoc 속성 인코딩: & 와 " 만 escape (HTML 구조는 보존)
+            var escaped = safe
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;');
+            // 컨텐츠 높이에 맞춰 자동 리사이즈 (srcdoc는 부모와 same-origin이라 접근 가능)
+            var onload = 'try{var d=this.contentDocument;var h=(d.documentElement&&d.documentElement.scrollHeight)||(d.body&&d.body.scrollHeight)||0;if(h)this.style.height=(h+24)+\'px\'}catch(e){}';
+            content = '<iframe srcdoc="' + escaped + '"'
+                   + ' onload="' + onload + '"'
+                   + ' style="width:100%; height:1200px; border:none; display:block; background:#fff; border-radius:8px;"></iframe>';
+            if (status) status.textContent = '✓ ' + f.name + ' (전체 페이지 모드, ' + safe.length.toLocaleString() + '자)';
+        } else {
+            // 단편 HTML: 찌꺼기 정리 후 그대로
+            content = safe
+                .replace(/<!DOCTYPE[^>]*>/gi, '')
+                .replace(/<!--[\s\S]*?-->/g, '')
+                .replace(/<\/?(html|head|body)[^>]*>/gi, '')
+                .trim();
+            if (status) status.textContent = '✓ ' + f.name + ' (' + content.length.toLocaleString() + '자)';
+        }
+
+        target.value = content;
     };
     reader.onerror = function() {
         if (status) status.textContent = '✗ 읽기 실패';
