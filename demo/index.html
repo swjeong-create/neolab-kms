@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <!-- iOS Safari 등의 강한 HTML 캐시를 우회하여 배포 후 즉시 반영되도록 -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="theme-color" content="#ff6720">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>NeoLAB Guidebook - 사내 지식포탈</title>
+    <!-- 오프라인 데모: 외부 폰트 CDN 제거 (시스템 폰트로 폴백) -->
+    <link rel="stylesheet" href="css/style.css?v=139">
+    <!-- CSS is loaded from css/style.css -->
+</head>
+<body>
+    <!-- 글로벌 로딩 오버레이 -->
+    <div id="globalLoading" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(255,255,255,0.5); z-index:9999; align-items:center; justify-content:center;">
+        <div style="background:var(--card-bg); padding:20px 32px; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,0.15); display:flex; align-items:center; gap:12px;">
+            <div class="loading-spinner"></div>
+            <span style="font-size:14px; color:var(--text-secondary); font-weight:500;">로딩 중...</span>
+        </div>
+    </div>
+    <div class="layout">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-logo">
+                <div class="logo-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="white"/>
+                        <path d="M2 17L12 22L22 17" stroke="white" stroke-width="2"/>
+                        <path d="M2 12L12 17L22 12" stroke="white" stroke-width="2"/>
+                    </svg>
+                </div>
+                <div class="logo-text">NeoLAB Guidebook</div>
+            </div>
+            
+            <nav class="sidebar-menu">
+                <div class="menu-section">
+                    <div class="menu-item active" data-page="dashboard">
+                        <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                        </svg>
+                        <span class="menu-text">홈</span>
+                    </div>
+                </div>
+                
+                <div class="menu-section" id="dynamicSidebarArea">
+                </div>
+
+                <!-- 인사정보 메뉴는 "인사 및 채용" 보드 하위로 통합되어 제거됨 (navigation.js가 자동 주입) -->
+
+                <div class="menu-section">
+                    <div class="menu-item" data-page="suggestions">
+                        <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                        </svg>
+                        <span class="menu-text">개선요청</span>
+                    </div>
+                </div>
+
+                <div class="menu-section">
+                    <div class="menu-item" id="adminMenuBtn">
+                        <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        <span class="menu-text">관리자 모드</span>
+                    </div>
+                </div>
+            </nav>
+        </aside>
+        
+        <main class="main-content">
+            <div class="mobile-overlay" onclick="document.getElementById('sidebar').classList.remove('mobile-show')"></div>
+            <header class="topbar">
+                <button type="button" class="icon-btn" id="sidebarToggle">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
+                <button type="button" class="icon-btn" id="backBtn" style="display: none; margin-left: -8px; margin-right: 8px;" title="뒤로가기">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                </button>
+                
+                <div class="breadcrumb" id="breadcrumb"><span>🏠 홈</span></div>
+                
+                <div class="search-box">
+                    <svg class="search-icon" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <input type="text" class="search-input" id="globalSearch" placeholder="문서, 규정 검색 후 Enter를 누르세요...">
+                </div>
+                <button type="button" class="icon-btn dark-toggle" id="darkModeToggle" title="다크모드 전환">🌙</button>
+            </header>
+            
+            <div class="content">
+                <section class="page-section active" id="dashboard">
+                    <!-- 🎨 환영 배너 (통계 통합) -->
+                    <div class="welcome-banner welcome-banner-v2">
+                        <div class="welcome-content">
+                            <h1 class="welcome-title">NeoLAB Guidebook</h1>
+                            <p class="welcome-subtitle">회사정보, 사내규정, 업무 가이드 등 다양한 업무 지식과 정보를 통합 제공하는 공간입니다.</p>
+                        </div>
+                        <div class="welcome-stats">
+                            <div class="welcome-stat-item">
+                                <span class="welcome-stat-value" id="count-total">0</span>
+                                <span class="welcome-stat-label">총 문서</span>
+                            </div>
+                            <div class="welcome-stat-divider"></div>
+                            <div class="welcome-stat-item">
+                                <span class="welcome-stat-value" id="count-reg">0</span>
+                                <span class="welcome-stat-label">사내규정</span>
+                            </div>
+                            <div class="welcome-stat-divider"></div>
+                            <div class="welcome-stat-item">
+                                <span class="welcome-stat-value" id="count-emp">0</span>
+                                <span class="welcome-stat-label">임직원</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 📂 카테고리 카드 보드 -->
+                    <div class="section-label">📚 카테고리 바로가기</div>
+                    <div class="category-board" id="categoryBoard"></div>
+
+                    <!-- ⭐ 즐겨찾기 -->
+                    <div class="quick-section" id="favoritesSection" style="display:none;">
+                        <div class="quick-section-header">
+                            <div class="quick-section-title">⭐ 즐겨찾기</div>
+                        </div>
+                        <div class="quick-list" id="favoritesList"></div>
+                    </div>
+
+                    <!-- 🕐 최근 본 문서 -->
+                    <div class="quick-section" id="recentSection" style="display:none;">
+                        <div class="quick-section-header">
+                            <div class="quick-section-title">🕐 최근 본 문서</div>
+                        </div>
+                        <div class="quick-list" id="recentList"></div>
+                    </div>
+
+                    <!-- 📰 새 소식 + 🔥 인기 문서 -->
+                    <div class="grid-2-1">
+                        <div class="card">
+                            <div class="card-header">
+                                <h2 class="card-title">📰 새 소식</h2>
+                                <span style="font-size:12px; color:var(--text-light);">최근 등록 문서</span>
+                            </div>
+                            <div class="update-list" id="dashboardUpdateList"></div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <h2 class="card-title">🔥 인기 문서</h2>
+                                <span style="font-size:12px; color:var(--text-light);">조회수 TOP 5</span>
+                            </div>
+                            <div class="popular-list" id="dashboardPopularList"></div>
+                        </div>
+                    </div>
+                </section>
+                
+                <section class="page-section" id="search-results">
+                    <h1 style="font-size: 28px; font-weight: 800; margin-bottom: 24px;">🔍 검색 결과</h1>
+                    <div id="searchKeywordDisplay" style="margin-bottom: 20px; color: var(--text-secondary); font-size: 15px;"></div>
+                    <div id="searchFilters" style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+                        <select id="searchBoardFilter" style="padding:6px 12px; border-radius:8px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+                            <option value="all">전체 게시판</option>
+                        </select>
+                        <select id="searchTypeFilter" style="padding:6px 12px; border-radius:8px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+                            <option value="all">전체 유형</option>
+                            <option value="text">TEXT</option>
+                            <option value="pdf">PDF</option>
+                            <option value="url">LINK</option>
+                            <option value="docx">DOCX</option>
+                            <option value="xlsx">XLSX</option>
+                            <option value="pptx">PPTX</option>
+                            <option value="images">이미지</option>
+                        </select>
+                        <span id="searchResultCount" style="margin-left:auto; font-size:13px; color:var(--text-light); align-self:center;"></span>
+                    </div>
+                    <div class="form-grid" id="searchGridContainer"></div>
+                </section>
+
+                <section class="page-section" id="dynamicBoardSection">
+                    <h1 id="boardMainTitle" style="font-size: 28px; font-weight: 800; margin-bottom: 24px;">게시판</h1>
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:24px; flex-wrap:wrap;">
+                    <div class="category-filter" id="boardFilterContainer" style="margin-bottom:0; flex:1;"></div>
+                    <div class="view-toggle" id="viewToggle">
+                        <button type="button" class="view-toggle-btn active" data-view="list" onclick="switchView('list')">📋 리스트</button>
+                        <button type="button" class="view-toggle-btn" data-view="gallery" onclick="switchView('gallery')">🖼️ 갤러리</button>
+                    </div>
+                </div>
+                    <div class="form-grid" id="boardGridContainer"></div>
+                    <div class="gallery-grid" id="boardGalleryContainer" style="display:none;"></div>
+                    <!-- 제품 상세 페이지 -->
+                    <div id="productDetailView" style="display:none;">
+                        <div style="margin-bottom:20px;">
+                            <button type="button" onclick="goBack()" style="background:var(--main-bg); border:1px solid var(--border-color); padding:8px 20px; border-radius:8px; cursor:pointer; font-size:14px; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
+                                ← 목록으로
+                            </button>
+                        </div>
+                        <div id="productDetailTitle" style="font-size:24px; font-weight:800; margin-bottom:8px; color:var(--text-primary);"></div>
+                        <div id="productDetailSub" style="font-size:14px; color:var(--text-light); margin-bottom:24px;"></div>
+                        <div id="productDetailImages" style="display:flex; flex-direction:column; align-items:center; gap:16px;"></div>
+                    </div>
+                    <!-- 인라인 문서 뷰어 -->
+                    <div id="inlineViewer" style="display:none; margin-top: 24px;">
+                        <div id="inlineViewerHeader" style="display:flex; align-items:center; justify-content:space-between; padding: 16px 20px; background: var(--brand-gray); color: white; border-radius: 12px 12px 0 0;">
+                            <div style="display:flex; align-items:center; gap: 12px;">
+                                <span id="inlineViewerIcon" style="font-size: 24px;">📄</span>
+                                <div>
+                                    <div id="inlineViewerTitle" style="font-size: 16px; font-weight: 700;"></div>
+                                    <div id="inlineViewerMeta" style="font-size: 12px; opacity: 0.8;"></div>
+                                </div>
+                            </div>
+                            <div style="display:flex; gap: 8px;">
+                                <button type="button" onclick="openInNewTab()" style="background:rgba(255,255,255,0.2); border:none; color:white; padding:8px 14px; border-radius:6px; cursor:pointer; font-size:13px;">↗ 새창</button>
+                                <button type="button" onclick="closeInlineViewer()" style="background:rgba(255,255,255,0.2); border:none; color:white; padding:8px 14px; border-radius:6px; cursor:pointer; font-size:13px;">✕ 닫기</button>
+                            </div>
+                        </div>
+                        <div id="inlineViewerBody" style="background: var(--card-bg); border: 1px solid var(--border-color); border-top: none; border-radius: 0 0 12px 12px; overflow: hidden;">
+                            <iframe id="inlineViewerFrame" style="width:100%; height:80vh; border:none;" allow="fullscreen"></iframe>
+                        </div>
+                    </div>
+                </section>
+                
+                <section class="page-section" id="hr">
+                    <h1 style="font-size: 28px; font-weight: 800; margin-bottom: 24px;">👥 인사정보</h1>
+                    <div class="tabs">
+                        <button type="button" class="tab active" data-tab="contacts">연락처</button>
+                        <button type="button" class="tab" data-tab="orgchart">조직도</button>
+                    </div>
+                    <div class="tab-content active" id="contacts">
+                        <div class="contact-header">
+                            <input type="text" class="contact-search" id="contactSearch" placeholder="이름 또는 부서로 검색...">
+                            <select class="dept-select" id="deptFilter">
+                                <option value="all">전체 부서</option>
+                                <option value="CEO">CEO/CSO/COO</option>
+                                <option value="사업본부">사업본부</option>
+                                <option value="기술연구소">기술연구소</option>
+                                <option value="생산본부">생산본부</option>
+                                <option value="경영지원본부">경영지원본부</option>
+                            </select>
+                        </div>
+                        <div class="table-container">
+                            <table id="contactTable">
+                                <thead>
+                                    <tr><th class="contact-no-col">No.</th><th data-sort="name">이름 ▲▼</th><th data-sort="position">직급 ▲▼</th><th data-sort="dept">부서 ▲▼</th><th>내선번호</th><th>휴대폰</th><th>이메일</th><th>상태</th></tr>
+                                </thead>
+                                <tbody id="contactTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="tab-content" id="orgchart">
+                        <div id="orgChartContainer" style="position:relative; min-height:400px; background:var(--card-bg); border-radius:12px; border:1px solid var(--border-color); overflow:hidden;">
+                            <div id="orgChartToolbar" style="position:sticky; top:0; z-index:10; display:flex; gap:6px; padding:12px 16px; background:var(--card-bg); border-bottom:1px solid var(--border-color);">
+                                <button onclick="orgChartZoom(1.2)" style="padding:6px 12px; border:1px solid var(--border-color); border-radius:6px; background:white; cursor:pointer; font-size:14px; font-weight:bold;">+</button>
+                                <button onclick="orgChartZoom(0.8)" style="padding:6px 12px; border:1px solid var(--border-color); border-radius:6px; background:white; cursor:pointer; font-size:14px; font-weight:bold;">-</button>
+                                <button onclick="orgChartReset()" style="padding:6px 12px; border:1px solid var(--border-color); border-radius:6px; background:white; cursor:pointer; font-size:13px;">초기화</button>
+                                <span style="margin-left:auto; font-size:12px; color:var(--text-light); align-self:center;">마우스 드래그로 이동, 스크롤로 확대/축소</span>
+                            </div>
+                            <div id="orgChartScrollArea" style="overflow:auto; max-height:70vh; padding:30px;">
+                                <div id="orgChartCanvas" style="transform-origin:top center; transition:transform 0.2s; display:inline-block; min-width:100%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="page-section" id="suggestions">
+                    <h1 style="font-size: 28px; font-weight: 800; margin-bottom: 8px;">💡 개선요청</h1>
+                    <p style="color: var(--text-secondary); margin-bottom: 24px; font-size: 14px;">회사 업무환경, 제도, 시스템 등에 대한 개선 의견을 자유롭게 남겨주세요.<br>작성자 정보는 <strong>일절 저장되지 않으며</strong>, 관리자만 내용을 확인합니다.</p>
+                    <div class="suggestion-form-card">
+                        <textarea id="suggestionInput" class="suggestion-textarea" placeholder="개선이 필요한 사항을 자유롭게 작성해주세요...&#10;&#10;예) 회의실 예약 시스템 개선, 복리후생 제도 건의, 업무 프로세스 개선 등" rows="6"></textarea>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
+                            <span style="font-size: 12px; color: var(--text-light);">🔒 완전 익명 · 작성자 정보 미저장</span>
+                            <button type="button" class="suggestion-submit-btn" onclick="submitSuggestion()">익명으로 제출</button>
+                        </div>
+                        <div id="suggestionSuccess" class="suggestion-success" style="display:none;">
+                            ✅ 소중한 의견이 전달되었습니다. 감사합니다!
+                        </div>
+                    </div>
+                </section>
+
+                <section class="page-section" id="notices">
+                    <h1 style="font-size: 28px; font-weight: 800; margin-bottom: 24px;">📢 공지사항</h1>
+                    <div class="notice-list" id="noticeListContainer"></div>
+                </section>
+                
+                <footer class="footer">© 2026 NeoLab Convergence Inc. | 운영: 인사총무팀</footer>
+            </div>
+        </main>
+    </div>
+    
+    <div class="modal" id="noticeModal" onclick="if(event.target === this) this.classList.remove('show')">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">제목</h2>
+                <button type="button" class="modal-close" onclick="document.getElementById('noticeModal').classList.remove('show')">✕</button>
+            </div>
+            <div class="modal-body" id="modalBody"><p>내용이 여기에 표시됩니다.</p></div>
+        </div>
+    </div>
+    
+    <!-- 관리자 로그인은 Google OAuth 기반으로 대체됨 -->
+    
+    <button type="button" class="scroll-top" id="scrollTop">
+        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
+    </button>
+    
+    <!-- 관리자 비밀번호 입력 모달 -->
+    <!-- 조직도 노드 편집 모달 -->
+    <div id="orgEditModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:10000; align-items:center; justify-content:center;">
+        <div style="background:#fff; border-radius:14px; padding:24px; width:420px; max-width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+            <h2 style="margin:0 0 18px 0; font-size:18px; color:#0f172a;">✎ 조직도 노드 편집</h2>
+            <input type="hidden" id="orgEditId">
+            <div style="margin-bottom:14px;">
+                <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:6px;">이름 / 부서명</label>
+                <input type="text" id="orgEditName" style="width:100%; padding:9px 12px; border:1px solid #e2e8f0; border-radius:8px; font-size:14px; box-sizing:border-box;">
+            </div>
+            <div style="margin-bottom:14px;">
+                <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:6px;">직책 (인원인 경우)</label>
+                <input type="text" id="orgEditTitle" placeholder="예: 팀장, 본부장, CEO" style="width:100%; padding:9px 12px; border:1px solid #e2e8f0; border-radius:8px; font-size:14px; box-sizing:border-box;">
+            </div>
+            <div style="margin-bottom:14px;">
+                <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:6px;">소속 부서</label>
+                <input type="text" id="orgEditDepartment" style="width:100%; padding:9px 12px; border:1px solid #e2e8f0; border-radius:8px; font-size:14px; box-sizing:border-box;">
+            </div>
+            <div style="margin-bottom:18px;">
+                <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:6px;">박스 색상</label>
+                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                    <input type="color" id="orgEditColor" style="width:48px; height:36px; border:1px solid #e2e8f0; border-radius:8px; cursor:pointer; padding:2px;">
+                    <input type="text" id="orgEditColorHex" placeholder="#RRGGBB" style="width:110px; padding:9px 10px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; font-family:monospace;">
+                    <button type="button" onclick="orgEditClearColor()" style="background:#f1f5f9; border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px; cursor:pointer; font-size:12px;">기본값</button>
+                </div>
+                <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
+                    <button type="button" onclick="orgEditSetColor('#ff6720')" style="width:28px; height:28px; border-radius:6px; border:1px solid #e2e8f0; background:#ff6720; cursor:pointer;" title="주황"></button>
+                    <button type="button" onclick="orgEditSetColor('#0ea5e9')" style="width:28px; height:28px; border-radius:6px; border:1px solid #e2e8f0; background:#0ea5e9; cursor:pointer;" title="하늘"></button>
+                    <button type="button" onclick="orgEditSetColor('#10b981')" style="width:28px; height:28px; border-radius:6px; border:1px solid #e2e8f0; background:#10b981; cursor:pointer;" title="초록"></button>
+                    <button type="button" onclick="orgEditSetColor('#8b5cf6')" style="width:28px; height:28px; border-radius:6px; border:1px solid #e2e8f0; background:#8b5cf6; cursor:pointer;" title="보라"></button>
+                    <button type="button" onclick="orgEditSetColor('#f59e0b')" style="width:28px; height:28px; border-radius:6px; border:1px solid #e2e8f0; background:#f59e0b; cursor:pointer;" title="황금"></button>
+                    <button type="button" onclick="orgEditSetColor('#ef4444')" style="width:28px; height:28px; border-radius:6px; border:1px solid #e2e8f0; background:#ef4444; cursor:pointer;" title="빨강"></button>
+                    <button type="button" onclick="orgEditSetColor('#64748b')" style="width:28px; height:28px; border-radius:6px; border:1px solid #e2e8f0; background:#64748b; cursor:pointer;" title="슬레이트"></button>
+                    <button type="button" onclick="orgEditSetColor('#1e293b')" style="width:28px; height:28px; border-radius:6px; border:1px solid #e2e8f0; background:#1e293b; cursor:pointer;" title="다크"></button>
+                </div>
+            </div>
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+                <button type="button" onclick="closeOrgEditModal()" style="background:#f1f5f9; border:1px solid #e2e8f0; border-radius:8px; padding:9px 18px; cursor:pointer; font-size:13px;">취소</button>
+                <button type="button" onclick="saveOrgEditNode()" style="background:#3b82f6; color:#fff; border:none; border-radius:8px; padding:9px 22px; cursor:pointer; font-size:13px; font-weight:600;">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-login-modal" id="adminLoginModal">
+        <div class="admin-login-box">
+            <h2>🔐 관리자 인증</h2>
+            <div class="admin-login-form">
+                <div class="form-group">
+                    <label style="color:#ddd;font-weight:600;margin-bottom:8px;display:block;">관리자 비밀번호</label>
+                    <input type="password" id="adminPasswordInput" placeholder="비밀번호를 입력하세요" style="width:100%;padding:12px;border:2px solid transparent;border-radius:8px;font-size:16px;">
+                </div>
+                <div class="admin-login-error" id="adminLoginError">비밀번호가 틀렸습니다.</div>
+                <div class="admin-login-buttons">
+                    <button class="btn btn-secondary" id="adminLoginCancelBtn">취소</button>
+                    <button class="btn btn-primary" id="adminLoginSubmitBtn">확인</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-overlay" id="adminOverlay">
+        <div class="admin-container">
+            <!-- 관리자 사이드바 -->
+            <div class="admin-sidebar">
+                <div class="admin-sidebar-logo">
+                    <h2>NeoLAB Guidebook</h2>
+                    <small>관리자 패널</small>
+                </div>
+                <nav class="admin-sidebar-nav">
+                    <div class="admin-sidebar-label">게시판</div>
+                    <div class="admin-nav-item active" data-tab="menuAdmin"><span class="nav-icon">📁</span> 메뉴/카테고리</div>
+                    <div class="admin-nav-item" data-tab="postAdmin"><span class="nav-icon">📋</span> 게시물 목록</div>
+                    <div class="admin-nav-item" data-tab="postWrite"><span class="nav-icon">✏️</span> 게시물 등록/수정</div>
+                    <div class="admin-sidebar-label">인사 및 채용</div>
+                    <div class="admin-nav-item" data-tab="contacts"><span class="nav-icon">👥</span> 연락처</div>
+                    <div class="admin-nav-item" data-tab="orgchartAdmin"><span class="nav-icon">🏢</span> 조직도</div>
+                    <div class="admin-sidebar-label">관리</div>
+                    <div class="admin-nav-item" data-tab="suggestionsAdmin"><span class="nav-icon">💡</span> 개선요청</div>
+                    <div class="admin-sidebar-label">시스템</div>
+                    <div class="admin-nav-item" data-tab="accessStats"><span class="nav-icon">📊</span> 접속 현황</div>
+                    <div class="admin-nav-item" data-tab="settings"><span class="nav-icon">⚙️</span> 설정</div>
+                    <div class="admin-nav-item" data-tab="backup"><span class="nav-icon">💾</span> 백업/복원</div>
+                    <div class="admin-nav-item" data-tab="adminManage" id="adminManageNavBtn" style="display:none;"><span class="nav-icon">👑</span> 관리자 관리</div>
+                </nav>
+                <div class="admin-sidebar-footer">
+                    <div class="admin-sidebar-user">
+                        <div style="width:32px; height:32px; border-radius:50%; background:#ff6720; display:flex; align-items:center; justify-content:center; color:white; font-weight:700; font-size:14px;" id="adminUserAvatar">A</div>
+                        <div class="admin-sidebar-user-info">
+                            <div class="admin-sidebar-user-name" id="adminUserName">관리자</div>
+                            <div class="admin-sidebar-user-role" id="adminUserRole">최고관리자</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 관리자 메인 -->
+            <div class="admin-main">
+                <div class="admin-top-header">
+                    <h1 id="adminPageTitle">📁 메뉴/카테고리</h1>
+                    <button type="button" class="admin-logout-btn" id="adminLogoutBtn"><span>←</span><span>나가기</span></button>
+                </div>
+
+                <div class="admin-panel">
+                    <div class="admin-header"></div>
+                    <div class="admin-tabs" style="display:none;"></div>
+                
+                <div class="admin-tab-content active" id="menuAdminTab">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                        <h2 style="margin-bottom:0;">📁 메뉴/카테고리 관리</h2>
+                        <button type="button" class="admin-write-btn" onclick="showAddBoardDialog()">+ 메뉴 추가</button>
+                    </div>
+                    <p style="color:var(--text-light); margin-bottom:20px; font-size:13px;">메뉴(대분류) 아래에 카테고리(중분류)를 자유롭게 구성하세요. ▲▼로 순서 변경, 이름 클릭으로 수정 가능합니다.</p>
+
+                    <div id="menuTreeContainer" style="display:flex; flex-direction:column; gap:0;"></div>
+
+                    <!-- 기존 폼 요소 (숨김, JS 호환용) -->
+                    <div style="display:none;">
+                        <input type="text" id="boardIdInput"><input type="text" id="boardNameInput">
+                        <select id="boardViewTypeInput"><option value="list">리스트</option><option value="gallery">갤러리</option></select>
+                        <button id="addBoardBtn"></button>
+                        <select id="catTargetBoard"></select><input type="text" id="catIdInput"><input type="text" id="catNameInput">
+                        <button id="addCatBtn"></button>
+                        <div id="boardListContainer"></div><div id="catListContainer"></div>
+                    </div>
+                </div>
+
+                <div class="admin-tab-content" id="postAdminTab">
+                    <h2>&#128221; &#44172;&#49884;&#47932; &#44288;&#47532;</h2>
+
+                    <!-- &#44172;&#49884;&#54032;/&#52852;&#53580;&#44256;&#47532; &#54596;&#53552; -->
+                    <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center;">
+                        <select id="adminPostBoardFilter" onchange="loadAdminPostTable()" style="padding:10px 14px; border:1px solid var(--border-color); border-radius:8px; font-size:14px; min-width:150px;">
+                            <option value="all">&#51204;&#52404; &#44172;&#49884;&#54032;</option>
+                        </select>
+                        <select id="adminPostCatFilter" onchange="loadAdminPostTable()" style="padding:10px 14px; border:1px solid var(--border-color); border-radius:8px; font-size:14px; min-width:150px;">
+                            <option value="all">&#51204;&#52404; &#52852;&#53580;&#44256;&#47532;</option>
+                        </select>
+                    </div>
+
+                    <!-- &#44160;&#49353; -->
+                    <div class="admin-search-box">
+                        <select class="admin-search-select" id="adminPostSearchField">
+                            <option value="title">&#51228;&#47785;</option>
+                            <option value="content">&#45236;&#50857;</option>
+                        </select>
+                        <input type="text" class="admin-search-input" id="adminPostSearchInput" placeholder="&#44160;&#49353;&#50612;&#47484; &#51077;&#47141;&#54616;&#49464;&#50836;..." onkeypress="if(event.key==='Enter') loadAdminPostTable()">
+                        <button type="button" class="admin-search-btn" onclick="loadAdminPostTable()">&#44160;&#49353;</button>
+                    </div>
+
+                    <!-- &#53812;&#48148; -->
+                    <div id="adminPostOrderHint" style="display:none; padding:8px 12px; margin-bottom:12px; background:rgba(255,193,7,0.1); border:1px solid rgba(255,193,7,0.3); border-radius:6px; font-size:13px; color:var(--text-secondary);"></div>
+                    <div class="admin-toolbar">
+                        <div class="admin-toolbar-left">
+                            <span id="adminPostCount">&#52509; 0&#44060;</span>
+                        </div>
+                        <div class="admin-toolbar-right">
+                            <button type="button" class="admin-btn admin-btn-primary" onclick="moveSelectedPosts()" style="font-size:13px; padding:6px 14px;">일괄 이동</button>
+                            <button type="button" class="admin-delete-btn" onclick="deleteSelectedPosts()">삭제</button>
+                            <button type="button" class="admin-write-btn" onclick="openWriteModal()">글쓰기</button>
+                        </div>
+                    </div>
+
+                    <!-- &#44172;&#49884;&#47932; &#53580;&#51060;&#48660; -->
+                    <div style="overflow-x:auto;">
+                        <table class="admin-table" id="adminPostTable">
+                            <thead>
+                                <tr>
+                                    <th class="td-check"><input type="checkbox" id="adminCheckAll" onchange="toggleAllPostChecks(this.checked)"></th>
+                                    <th style="width:50px; cursor:pointer;" onclick="sortAdminPosts('order')">번호 ↕</th>
+                                    <th style="width:80px">게시판</th>
+                                    <th style="width:80px">카테고리</th>
+                                    <th style="cursor:pointer;" onclick="sortAdminPosts('title')">제목 ↕</th>
+                                    <th style="width:70px">유형</th>
+                                    <th style="width:90px; cursor:pointer;" onclick="sortAdminPosts('date')">날짜 ↕</th>
+                                    <th style="width:60px; cursor:pointer;" onclick="sortAdminPosts('views')">조회 ↕</th>
+                                    <th style="width:100px">관리</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminPostTableBody"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- &#54168;&#51060;&#51648;&#45348;&#51060;&#49496; -->
+                    <div class="admin-pagination" id="adminPostPagination"></div>
+                </div>
+
+                <div class="admin-tab-content" id="postWriteTab">
+                    <h2>✏️ 게시물 등록/수정</h2>
+                    <p style="color:var(--text-secondary); margin-bottom:20px; font-size:14px;">새 게시물을 등록하거나, 게시물 목록에서 수정 버튼을 누르면 이 탭에서 편집됩니다.</p>
+
+                    <div id="editPostIndicator" style="display:none; margin-bottom:16px; padding:12px 16px; background:rgba(255,103,32,0.1); border:1px solid var(--primary); border-radius:8px; color:var(--primary); font-weight:600;">
+                        📝 수정 중: <span id="editPostTitle"></span>
+                        <button type="button" onclick="cancelEditPostForm()" style="margin-left:12px; background:none; border:1px solid #ef4444; color:#ef4444; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:12px;">취소 (신규 작성으로)</button>
+                    </div>
+
+                    <div class="admin-row">
+                        <div class="admin-form-group">
+                            <label for="postBoardSel">대분류 (게시판) 선택</label>
+                            <select id="postBoardSel" onchange="updatePostCategoryDropdown()"></select>
+                        </div>
+                        <div class="admin-form-group">
+                            <label for="postCatSel">중분류 (카테고리) 선택</label>
+                            <select id="postCatSel"></select>
+                        </div>
+                    </div>
+                    <div class="admin-row">
+                        <div class="admin-form-group" id="postTypeGroup">
+                            <label for="postType">입력 및 표시 방식</label>
+                            <select id="postType" onchange="togglePostFields()">
+                                <option value="text">직접 입력 (텍스트/표 모달창 뷰)</option>
+                                <option value="pdf">PDF 파일 업로드 (새 창 뷰어)</option>
+                                <option value="url">외부 URL 링크 연결 (구글독스 등)</option>
+                                <option value="link">URL 바로 연결 (새 탭 열기)</option>
+                                <option value="docx">DOCX 아이콘 타입 (링크 필수)</option>
+                                <option value="xlsx">XLSX 아이콘 타입 (링크 필수)</option>
+                                <option value="pptx">PPTX 아이콘 타입 (링크 필수)</option>
+                                <option value="images">이미지 (복수 업로드)</option>
+                            </select>
+                        </div>
+                        <div class="admin-form-group">
+                            <label for="postTitle">문서/게시물 제목</label>
+                            <input type="text" id="postTitle" placeholder="예: 2026년 상반기 제안서">
+                        </div>
+                    </div>
+                    <div class="admin-row">
+                        <div class="admin-form-group">
+                            <label for="postIcon">카드 아이콘 (선택, 이모지)</label>
+                            <input type="text" id="postIcon" placeholder="예: 🏥, 📕, 🔗 (비워두면 자동지정)">
+                        </div>
+                        <div class="admin-form-group">
+                            <label for="postSubInfo">부가정보 (버전/금액/작성자 등)</label>
+                            <input type="text" id="postSubInfo" placeholder="예: v1.0, 50만원, 인사팀 등">
+                        </div>
+                    </div>
+                    <div class="admin-form-group" id="postIconImageGroup">
+                        <label for="postIconImage">카드 아이콘 이미지 (선택, 이모지 대신 이미지 사용)</label>
+                        <input type="file" id="postIconImage" accept=".png,.jpg,.jpeg,.gif,.webp,.svg">
+                        <div id="postIconImagePreview" style="margin-top:8px;"></div>
+                    </div>
+                    <div class="admin-form-group" id="postUrlGroup" style="display: none;">
+                        <label for="postUrl">🔗 외부 URL / 다운로드 링크</label>
+                        <input type="url" id="postUrl" placeholder="예: https://docs.google.com/...">
+                    </div>
+                    <div class="admin-form-group" id="postPdfGroup" style="display: none; background: rgba(255,103,32,0.05); padding: 15px; border-radius: 8px; border: 1px dashed var(--primary);">
+                        <label style="color: var(--primary);">📄 PDF 파일 업로드 (최대 50MB)</label>
+                        <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 10px;">파일은 서버에 저장됩니다.</p>
+                        <div class="admin-file-input-wrapper">
+                            <input type="file" id="postPdfFile" accept="application/pdf">
+                            <label for="postPdfFile" class="admin-file-input-label" style="background: var(--primary);">📁 PDF 파일 선택</label>
+                        </div>
+                        <div id="postPdfFileName" style="font-size: 13px; font-weight: bold; color: var(--text-primary); margin-top: 10px;"></div>
+                        <input type="hidden" id="postFileName">
+                    </div>
+                    <div class="admin-form-group" id="postImagesGroup" style="display:none;">
+                        <label>🖼️ 이미지 파일 (여러 개 선택 가능, 최대 10장)</label>
+                        <input type="file" id="postImages" accept=".png,.jpg,.jpeg,.gif,.webp" multiple>
+                        <div id="postImagesPreview" style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;"></div>
+                        <div id="postImagesStatus" style="font-size:12px; color:var(--text-light); margin-top:4px;"></div>
+                    </div>
+                    <div class="admin-form-group" id="postContentGroup">
+                        <label for="postContent" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                            <span>상세 내용 (모달창 텍스트, 이미지 타입과 함께 등록 가능)</span>
+                            <button type="button" onclick="document.getElementById('postContentHtmlFile').click()" style="padding:4px 10px; background:var(--brand-gray,#6b7280); color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:12px; font-weight:500;">📁 HTML 파일 불러오기</button>
+                            <input type="file" id="postContentHtmlFile" accept=".html,.htm,text/html" style="display:none;" onchange="loadHtmlFileToTextarea(this, 'postContent', 'postContentHtmlStatus')">
+                            <span id="postContentHtmlStatus" style="font-size:12px; color:var(--text-light);"></span>
+                        </label>
+                        <textarea id="postContent" placeholder="상세 내용을 입력하세요 (줄바꿈은 <br> 태그, 표는 HTML 태그 사용). 이미지 타입을 선택해도 본문을 함께 등록할 수 있습니다."></textarea>
+                    </div>
+                    <button type="button" class="admin-btn admin-btn-success" id="addPostBtn">게시물 등록</button>
+
+                    <hr style="margin: 24px 0; border: none; border-top: 1px solid var(--border-color);">
+                    <h3 style="margin-bottom: 12px;">📋 전체 게시물</h3>
+                    <div class="admin-row" style="margin-bottom: 12px;">
+                        <div class="admin-form-group" style="flex:1;">
+                            <select id="postFilterBoard" onchange="filterAdminPosts()" style="padding:8px 12px;">
+                                <option value="">전체 게시판</option>
+                            </select>
+                        </div>
+                        <div class="admin-form-group" style="flex:2;">
+                            <input type="text" id="postSearchInput" placeholder="제목 검색..." oninput="filterAdminPosts()" style="padding:8px 12px;">
+                        </div>
+                    </div>
+                    <div class="admin-data-list" id="postsListContainer" style="max-height: 500px;"></div>
+                </div>
+                
+                <div class="admin-tab-content" id="infraAdminTab">
+                    <h2>🔗 인프라 관리</h2>
+                    <p style="color:var(--text-secondary); margin-bottom:20px; font-size:14px;">메일, 드라이브, 챗, 그룹웨어, ERP 등 인프라 바로가기 링크를 관리합니다.</p>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                        <div id="adminInfraCount" style="font-size:14px; color:var(--text-secondary);">총 0개</div>
+                        <button type="button" class="admin-write-btn" onclick="openInfraModal()">+ 인프라 추가</button>
+                    </div>
+
+                    <div style="overflow-x:auto;">
+                        <table class="admin-table" id="adminInfraTable">
+                            <thead>
+                                <tr>
+                                    <th style="width:60px;">아이콘</th>
+                                    <th>이름</th>
+                                    <th>URL</th>
+                                    <th style="width:100px;">관리</th>
+                                </tr>
+                            </thead>
+                            <tbody id="infraList"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 인프라 추가/수정 모달 -->
+                <div class="write-modal-overlay" id="infraModal" onclick="if(event.target===this) closeInfraModal()">
+                    <div class="write-modal" style="max-width:520px;">
+                        <h2 id="infraModalTitle">인프라 추가</h2>
+                        <div class="write-form-group">
+                            <label>이름</label>
+                            <input type="text" id="infraName" placeholder="예: Gmail, Google Drive, 그룹웨어">
+                        </div>
+                        <div class="write-form-group">
+                            <label>URL</label>
+                            <input type="text" id="infraUrl" placeholder="https://mail.google.com">
+                        </div>
+                        <div class="write-form-group">
+                            <label>아이콘 이모지 (선택)</label>
+                            <input type="text" id="infraIcon" placeholder="예: 📧, 📁, 💬" style="max-width:120px;">
+                        </div>
+                        <div class="write-form-group">
+                            <label>아이콘 이미지 (선택, 이모지 대신 이미지 사용)</label>
+                            <input type="file" id="infraThumb" accept=".png,.jpg,.jpeg,.gif,.webp">
+                            <div id="infraThumbPreview" style="margin-top:8px;"></div>
+                        </div>
+                        <div class="write-form-actions">
+                            <button type="button" class="write-cancel-btn" onclick="closeInfraModal()">취소</button>
+                            <button type="button" class="write-submit-btn" onclick="submitInfraModal()">저장</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-tab-content" id="noticesTab">
+                    <h2>📢 공지사항 관리</h2>
+                    <div class="admin-form-group"><label>제목</label><input type="text" id="noticeTitle"></div>
+                    <div class="admin-form-group"><label>유형</label><select id="noticeType"><option value="general">🔵 일반</option><option value="important">🟡 중요</option><option value="urgent">🔴 긴급</option></select></div>
+                    <div class="admin-form-group"><label>내용</label><textarea id="noticeContent"></textarea></div>
+                    <button type="button" class="admin-btn admin-btn-success" id="addNoticeBtn">추가</button>
+                    <span id="editNoticeIndicator" style="display:none; margin-left:12px; color:var(--primary); font-weight:bold;">수정 중... <a href="#" onclick="cancelEditNotice(); return false;" style="color:#ef4444;">취소</a></span>
+                    <div class="admin-data-list" id="noticesList"></div>
+                </div>
+                
+                <div class="admin-tab-content" id="contactsTab">
+                    <h2>👥 연락처 관리</h2>
+
+                    <!-- Excel 일괄 업로드 패널 -->
+                    <div style="background:rgba(255,103,32,0.04); border:1px solid var(--border-color); border-radius:10px; padding:14px 16px; margin-bottom:16px;">
+                        <div style="font-weight:700; margin-bottom:8px; color:var(--text-primary); font-size:14px;">📥 Excel 일괄 등록/수정</div>
+                        <p style="font-size:12px; color:var(--text-secondary); margin:0 0 10px 0; line-height:1.6;">
+                            ① 샘플(또는 현재) Excel을 다운로드 → ② Excel에서 편집 → ③ 업로드하면 <b>전체 연락처가 교체</b>됩니다.<br>
+                            컬럼: <code>이름·직급·부서·내선번호·휴대폰·이메일·상태</code> (이름 필수, 상태는 재직중/휴직중/파견중)
+                        </p>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                            <button type="button" class="admin-btn admin-btn-primary" onclick="downloadContactTemplate()" style="font-size:13px; padding:8px 14px;">📋 샘플 다운로드</button>
+                            <button type="button" class="admin-btn admin-btn-primary" onclick="downloadContactsAsExcel()" style="font-size:13px; padding:8px 14px;">📤 현재 연락처 Excel 다운로드</button>
+                            <input type="file" id="contactExcelFileInput" accept=".xlsx,.xls,.csv" style="padding:6px; border:1px solid var(--border-color); border-radius:6px; font-size:13px; flex:1; min-width:200px;">
+                            <button type="button" class="admin-btn admin-btn-success" onclick="uploadContactsExcel()" style="font-size:13px; padding:8px 14px;">📥 업로드 및 적용</button>
+                        </div>
+                        <div id="contactExcelPreview" style="display:none; margin-top:12px; max-height:240px; overflow:auto; border:1px solid var(--border-color); border-radius:8px; background:var(--card-bg);"></div>
+                    </div>
+
+                    <!-- 검색 및 추가 버튼 -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+                        <input type="text" id="contactSearchInput" placeholder="이름, 부서, 직급 검색..." oninput="filterAdminContacts()" style="padding:10px 14px; width:100%; max-width:300px; border-radius:8px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
+                        <button type="button" class="admin-write-btn" onclick="openContactModal()">+ 직원 추가</button>
+                    </div>
+
+                    <div id="adminContactCount" style="font-size:14px; color:var(--text-secondary); margin-bottom:12px;">총 0명</div>
+
+                    <!-- 연락처 테이블 -->
+                    <div style="overflow-x:auto;">
+                        <table class="admin-table" id="adminContactTable">
+                            <thead>
+                                <tr>
+                                    <th style="width:60px;">순서</th>
+                                    <th>이름</th>
+                                    <th>직급</th>
+                                    <th>부서</th>
+                                    <th>내선번호</th>
+                                    <th>휴대폰</th>
+                                    <th>이메일</th>
+                                    <th>상태</th>
+                                    <th style="width:100px;">관리</th>
+                                </tr>
+                            </thead>
+                            <tbody id="contactsList"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- 기존 폼 (숨김, 호환용) -->
+                    <div style="display:none;">
+                        <input type="text" id="contactName"><input type="text" id="contactPosition">
+                        <input type="text" id="contactDept"><input type="text" id="contactPhone">
+                        <input type="text" id="contactMobile">
+                        <input type="email" id="contactEmail">
+                        <select id="contactStatus"><option value="active">재직중</option><option value="dispatch">파견중</option><option value="leave">휴직중</option></select>
+                        <button id="addContactBtn">추가</button>
+                        <span id="editContactIndicator" style="display:none;"></span>
+                    </div>
+                </div>
+
+                <div class="admin-tab-content" id="orgchartAdminTab">
+                    <h2>🏢 조직도 관리</h2>
+                    <p style="color:var(--text-secondary); margin-bottom:20px;">Excel 파일로 조직도를 일괄 등록하고, 트리에서 구조를 자유롭게 편집할 수 있습니다.</p>
+
+                    <div style="display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap; align-items:center;">
+                        <button type="button" class="admin-btn admin-btn-primary" onclick="downloadOrgChartTemplate()">📥 샘플 Excel 다운로드</button>
+                        <div style="flex:1; min-width:200px;">
+                            <input type="file" id="orgExcelFileInput" accept=".xlsx,.xls" style="padding:8px; border:1px solid var(--border-color); border-radius:8px; width:100%; box-sizing:border-box;">
+                        </div>
+                        <button type="button" class="admin-btn admin-btn-success" onclick="uploadOrgChartExcel()">📤 업로드 및 적용</button>
+                    </div>
+
+                    <div id="orgExcelPreview" style="display:none; margin-bottom:20px; max-height:300px; overflow:auto; border:1px solid var(--border-color); border-radius:8px;"></div>
+
+                    <hr style="margin:24px 0; border:none; border-top:1px solid var(--border-color);">
+                    <h3 style="margin-bottom:8px;">🌳 조직도 캔버스</h3>
+                    <p style="font-size:13px; color:var(--text-light); margin-bottom:12px;">노드를 드래그하여 자유롭게 위치를 배치하세요. 놓으면 자동 저장됩니다.</p>
+                    <div style="margin-bottom:12px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                        <button type="button" class="admin-btn admin-btn-outline admin-btn-small" onclick="showAddNodeDialog('dept')">+ 부서 추가</button>
+                        <button type="button" class="admin-btn admin-btn-outline admin-btn-small" onclick="showAddNodeDialog('person')">+ 인원 추가</button>
+                        <button type="button" class="admin-btn admin-btn-outline admin-btn-small" onclick="orgAutoArrange()">📐 자동 정렬</button>
+                        <button type="button" id="orgLinkModeBtn" class="admin-btn admin-btn-outline admin-btn-small" onclick="orgToggleLinkMode()">🔗 연결선 그리기</button>
+                        <span id="orgLinkModeHint" style="margin-left:auto; font-size:12px; color:var(--text-light);">노드를 마우스로 드래그하여 위치 변경</span>
+                    </div>
+                    <div id="adminOrgCanvasWrap" style="overflow:auto; height:500px; background:var(--main-bg); border-radius:12px; border:1px solid var(--border-color); position:relative;">
+                        <div id="adminOrgCanvas" style="text-align:center; padding:20px;"></div>
+                    </div>
+                    <hr style="margin:20px 0; border:none; border-top:1px solid var(--border-color);">
+                    <h3 style="margin-bottom:8px;">📋 데이터 목록</h3>
+                    <div id="adminOrgTreeContainer" style="overflow:auto; max-height:520px; background:var(--main-bg); border-radius:12px; padding:14px; border:1px solid var(--border-color);"></div>
+                </div>
+                
+                <div class="admin-tab-content" id="suggestionsAdminTab">
+                    <h2>💡 개선요청 관리</h2>
+                    <p style="color:var(--text-secondary); margin-bottom:16px; font-size:14px;">직원들이 익명으로 제출한 개선요청 목록입니다. 작성자 정보는 저장되지 않으며, 완료 처리한 건은 히스토리로 보존됩니다.</p>
+                    <!-- 필터 탭 -->
+                    <div id="suggestionFilterTabs" style="display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap;">
+                        <button type="button" class="sug-filter-btn active" data-filter="all" onclick="setSuggestionFilter('all')" style="padding:8px 16px; border:1px solid var(--border-color); background:var(--primary); color:#fff; border-radius:20px; cursor:pointer; font-size:13px; font-weight:600;">전체 <span id="sugCountAll" style="opacity:0.85;">(0)</span></button>
+                        <button type="button" class="sug-filter-btn" data-filter="pending" onclick="setSuggestionFilter('pending')" style="padding:8px 16px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-primary); border-radius:20px; cursor:pointer; font-size:13px;">📋 진행 <span id="sugCountPending" style="color:var(--text-light);">(0)</span></button>
+                        <button type="button" class="sug-filter-btn" data-filter="completed" onclick="setSuggestionFilter('completed')" style="padding:8px 16px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-primary); border-radius:20px; cursor:pointer; font-size:13px;">✅ 완료 <span id="sugCountCompleted" style="color:var(--text-light);">(0)</span></button>
+                    </div>
+                    <div id="adminSuggestionCount" style="font-size:14px; color:var(--text-secondary); margin-bottom:12px;">총 0건</div>
+                    <div id="adminSuggestionsList"></div>
+                </div>
+
+                <div class="admin-tab-content" id="settingsTab">
+                    <h2>⚙️ 설정</h2>
+                    <div class="admin-form-group"><label>회사명</label><input type="text" id="companyName"></div>
+                    <button type="button" class="admin-btn admin-btn-primary" id="saveSettingsBtn">저장</button>
+                    <div class="admin-success-message" id="settingsSuccess"></div>
+
+                    <hr style="margin: 30px 0; border: none; border-top: 1px solid var(--border-color);">
+
+                    <h3 style="color: #ef4444; margin-bottom: 16px;">🔧 점검 모드</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 16px; font-size: 14px;">점검 모드를 활성화하면 관리자(ADMIN_EMAILS)만 접속할 수 있고, 일반 사용자는 "시스템 점검 중" 안내를 받습니다.</p>
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+                        <span id="maintenanceStatus" style="font-size:15px; font-weight:600;">확인 중...</span>
+                        <button type="button" class="admin-btn" id="maintenanceToggleBtn" onclick="toggleMaintenance()" style="padding:8px 20px;">전환</button>
+                    </div>
+
+                    <hr style="margin: 30px 0; border: none; border-top: 1px solid var(--border-color);">
+
+                    <h3 style="color: var(--primary); margin-bottom: 16px;">🔑 내 비밀번호 변경</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 16px; font-size: 14px;">관리자 모드 진입 시 사용하는 비밀번호를 변경합니다. 본인의 비밀번호만 변경할 수 있습니다.</p>
+                    <div class="admin-form-group">
+                        <label>현재 비밀번호</label>
+                        <input type="password" id="currentPwInput" placeholder="현재 비밀번호 입력">
+                    </div>
+                    <div class="admin-form-group">
+                        <label>새 비밀번호 (4자 이상)</label>
+                        <input type="password" id="newPwInput" placeholder="새 비밀번호 입력">
+                    </div>
+                    <div class="admin-form-group">
+                        <label>새 비밀번호 확인</label>
+                        <input type="password" id="newPwConfirmInput" placeholder="새 비밀번호 다시 입력">
+                    </div>
+                    <button type="button" class="admin-btn admin-btn-primary" onclick="changeMyPassword()">비밀번호 변경</button>
+                    <div class="admin-success-message" id="pwChangeSuccess"></div>
+                </div>
+                
+                <div class="admin-tab-content" id="backupTab">
+                    <h2>💾 백업 및 복원</h2>
+                    <div class="admin-backup-section">
+                        <h3>📥 데이터 백업</h3>
+                        <button type="button" class="admin-btn admin-btn-primary" id="backupBtn">💾 다운로드</button>
+                    </div>
+                    <div class="admin-backup-section">
+                        <h3>📤 데이터 복원</h3>
+                        <div class="admin-file-input-wrapper">
+                            <input type="file" id="restoreFile" accept=".json">
+                            <label for="restoreFile" class="admin-file-input-label">📁 파일 선택</label>
+                        </div>
+                        <button type="button" class="admin-btn admin-btn-success" id="restoreBtn" style="margin-top: 10px;">📤 복원하기</button>
+                    </div>
+                    <div class="admin-backup-section">
+                        <h3>🗑️ 데이터 초기화</h3>
+                        <button type="button" class="admin-btn admin-btn-danger" id="resetBtn">⚠️ 전체 초기화</button>
+                    </div>
+                </div>
+
+                <!-- 접속 현황 탭 -->
+                <div class="admin-tab-content" id="accessStatsTab">
+                    <h2>📊 일별 접속 현황</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 20px;">사용자별 일일 접속 기록을 확인할 수 있습니다.</p>
+
+                    <div style="display:flex; gap:12px; align-items:center; margin-bottom:24px; flex-wrap:wrap;">
+                        <select id="accessStatsDays" style="padding:8px 16px; border-radius:8px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
+                            <option value="7">최근 7일</option>
+                            <option value="14">최근 14일</option>
+                            <option value="30" selected>최근 30일</option>
+                            <option value="90">최근 90일</option>
+                        </select>
+                        <button type="button" class="admin-btn admin-btn-primary" onclick="loadAccessStats()">조회</button>
+                    </div>
+
+                    <!-- 요약 카드 -->
+                    <div id="accessStatsSummary" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin-bottom:28px;"></div>
+
+                    <!-- 일별 차트 (막대 그래프) -->
+                    <div class="admin-section" style="margin-bottom:28px;">
+                        <h3 style="color:var(--primary); margin-bottom:16px;">일별 접속자 수</h3>
+                        <div id="accessStatsChart" style="overflow-x:auto;"></div>
+                    </div>
+
+                    <!-- 인기 문서 TOP 10 -->
+                    <div class="admin-section" style="margin-bottom:28px;">
+                        <h3 style="color:var(--primary); margin-bottom:16px;">인기 문서 TOP 10</h3>
+                        <div id="popularDocsTable"></div>
+                    </div>
+
+                    <!-- 일별 상세 테이블 -->
+                    <div class="admin-section">
+                        <h3 style="color:var(--primary); margin-bottom:16px;">상세 기록</h3>
+                        <div id="accessStatsTable"></div>
+                    </div>
+                </div>
+
+                <!-- 관리자 관리 탭 (슈퍼 관리자만 표시) -->
+                <div class="admin-tab-content" id="adminManageTab">
+                    <h2>👑 관리자 관리</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 24px;">슈퍼 관리자만 이 기능을 사용할 수 있습니다. 추가된 관리자는 동일한 관리자 비밀번호로 관리자 모드에 접근할 수 있습니다.</p>
+
+                    <div class="admin-section">
+                        <h3 style="color: var(--primary); margin-bottom: 16px;">관리자 추가</h3>
+                        <div class="admin-row">
+                            <div class="admin-field">
+                                <label>이메일 (회사 도메인)</label>
+                                <input type="email" id="newAdminEmail" placeholder="예: hong@neolab.net">
+                            </div>
+                            <div class="admin-field">
+                                <label>이름 (선택)</label>
+                                <input type="text" id="newAdminName" placeholder="예: 홍길동">
+                            </div>
+                        </div>
+                        <button type="button" class="admin-btn admin-btn-primary" onclick="addAdmin()" style="margin-top: 12px;">➕ 관리자 추가</button>
+                    </div>
+
+                    <div class="admin-section" style="margin-top: 30px;">
+                        <h3 style="color: var(--primary); margin-bottom: 16px;">현재 관리자 목록</h3>
+                        <div id="adminListContainer">
+                            <p style="color: var(--text-light);">로딩 중...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 글쓰기/수정 모달 -->
+    <div class="write-modal-overlay" id="writeModalOverlay">
+        <div class="write-modal" style="max-width:720px;">
+            <h2 id="writeModalTitle" style="font-size:24px; margin-bottom:20px;">글쓰기</h2>
+
+            <!-- 드래그 & 드롭 영역 -->
+            <div class="write-dropzone" id="writeDropzone"
+                 ondragover="event.preventDefault(); this.classList.add('dragover');"
+                 ondragleave="this.classList.remove('dragover');"
+                 ondrop="handleWriteDrop(event);"
+                 onclick="document.getElementById('writeDropzoneFileInput').click();">
+                <input type="file" id="writeDropzoneFileInput" style="display:none;" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.png,.jpg,.jpeg,.gif,.webp" multiple onchange="handleWriteDropzoneSelect(this);">
+                <div class="write-dropzone-icon">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                </div>
+                <div class="write-dropzone-text">파일을 여기에 끌어다 놓으세요</div>
+                <div class="write-dropzone-hint">또는 클릭하여 파일 선택 (PDF, DOCX, XLSX, PPTX, 이미지)</div>
+                <div id="writeDroppedInfo" style="display:none; margin-top:12px;"></div>
+            </div>
+
+            <!-- 업로드 진행바 -->
+            <div class="write-progress" id="writeProgress" style="display:none;">
+                <div class="write-progress-bar" id="writeProgressBar"></div>
+            </div>
+
+            <!-- 필수 입력 영역 -->
+            <div class="write-form-row" style="margin-top:20px;">
+                <div class="write-form-group">
+                    <label>게시판 (대분류)</label>
+                    <select id="writeBoard" onchange="updateWriteCategories()"></select>
+                </div>
+                <div class="write-form-group">
+                    <label>카테고리 (중분류)</label>
+                    <select id="writeCat"></select>
+                </div>
+            </div>
+            <div class="write-form-group">
+                <label>제목</label>
+                <input type="text" id="writeTitle" placeholder="게시물 제목을 입력하세요">
+            </div>
+
+            <!-- 유형 & 파일/URL 영역 -->
+            <div class="write-form-group">
+                <label>유형</label>
+                <select id="writeType" onchange="toggleWriteFields()">
+                    <option value="text">텍스트</option>
+                    <option value="pdf">PDF</option>
+                    <option value="url">URL 링크</option>
+                    <option value="link">URL 바로연결</option>
+                    <option value="docx">DOCX</option>
+                    <option value="xlsx">XLSX</option>
+                    <option value="pptx">PPTX</option>
+                    <option value="images">이미지 (복수 업로드)</option>
+                </select>
+            </div>
+            <div class="write-form-group" id="writeUrlGroup" style="display:none;">
+                <label>URL</label>
+                <input type="text" id="writeUrl" placeholder="https://...">
+            </div>
+            <div class="write-form-group" id="writeFileGroup" style="display:none;">
+                <label>파일 첨부</label>
+                <input type="file" id="writeFile" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.png,.jpg,.jpeg,.gif">
+                <div id="writeFileStatus" style="font-size:13px; color:var(--text-light); margin-top:6px;"></div>
+            </div>
+            <div class="write-form-group" id="writeImagesGroup" style="display:none;">
+                <label>이미지 파일 (여러 개 선택 가능, 최대 10장)</label>
+                <input type="file" id="writeImages" accept=".png,.jpg,.jpeg,.gif,.webp" multiple>
+                <div id="writeImagesPreview" style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;"></div>
+                <div id="writeImagesStatus" style="font-size:13px; color:var(--text-light); margin-top:6px;"></div>
+            </div>
+
+            <!-- 추가 설정 (접기/펼치기) -->
+            <button type="button" class="write-advanced-toggle" id="writeAdvancedToggle" onclick="toggleWriteAdvanced()">
+                <span id="writeAdvancedArrow">&#9660;</span> 추가 설정
+            </button>
+            <div class="write-advanced-section" id="writeAdvancedSection">
+                <div class="write-form-group">
+                    <label>부가정보 (버전, 금액 등)</label>
+                    <input type="text" id="writeSubInfo" placeholder="예: v2.0, 2026년도">
+                </div>
+                <div class="write-form-group" id="writeThumbGroup">
+                    <label>썸네일 이미지 (갤러리 카드에 표시)</label>
+                    <input type="file" id="writeThumb" accept=".png,.jpg,.jpeg,.gif">
+                    <div id="writeThumbPreview" style="margin-top:8px;"></div>
+                </div>
+                <div class="write-form-group">
+                    <label>제품설명 이미지 (클릭 시 확대 표시, 최대 3장)</label>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <div style="flex:1; min-width:120px;">
+                            <input type="file" id="writeDetailImage1" accept=".png,.jpg,.jpeg,.gif" style="width:100%;">
+                        </div>
+                        <div style="flex:1; min-width:120px;">
+                            <input type="file" id="writeDetailImage2" accept=".png,.jpg,.jpeg,.gif" style="width:100%;">
+                        </div>
+                        <div style="flex:1; min-width:120px;">
+                            <input type="file" id="writeDetailImage3" accept=".png,.jpg,.jpeg,.gif" style="width:100%;">
+                        </div>
+                    </div>
+                    <div id="writeDetailPreview" style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;"></div>
+                </div>
+                <div class="write-form-group">
+                    <label>갤러리 바탕색 (선택)</label>
+                    <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+                        <input type="color" id="writeBgColor" value="#ffffff" style="width:40px; height:36px; border:1px solid var(--border-color); border-radius:6px; cursor:pointer; padding:2px;">
+                        <button type="button" onclick="document.getElementById('writeBgColor').value='#ffffff'" style="padding:6px 12px; border:1px solid var(--border-color); border-radius:6px; background:#fff; cursor:pointer; font-size:12px;">흰색</button>
+                        <button type="button" onclick="document.getElementById('writeBgColor').value='#f8f9fa'" style="padding:6px 12px; border:1px solid var(--border-color); border-radius:6px; background:#f8f9fa; cursor:pointer; font-size:12px;">밝은회색</button>
+                        <button type="button" onclick="document.getElementById('writeBgColor').value='#1e293b'" style="padding:6px 12px; border:1px solid var(--border-color); border-radius:6px; background:#1e293b; color:#fff; cursor:pointer; font-size:12px;">다크</button>
+                        <button type="button" onclick="document.getElementById('writeBgColor').value='#fff7ed'" style="padding:6px 12px; border:1px solid var(--border-color); border-radius:6px; background:#fff7ed; cursor:pointer; font-size:12px;">오렌지톤</button>
+                        <button type="button" onclick="document.getElementById('writeBgColor').value='#f0f9ff'" style="padding:6px 12px; border:1px solid var(--border-color); border-radius:6px; background:#f0f9ff; cursor:pointer; font-size:12px;">블루톤</button>
+                        <button type="button" onclick="document.getElementById('writeBgColor').value='#f0fdf4'" style="padding:6px 12px; border:1px solid var(--border-color); border-radius:6px; background:#f0fdf4; cursor:pointer; font-size:12px;">그린톤</button>
+                    </div>
+                </div>
+                <div class="write-form-group" id="writeContentGroup">
+                    <label style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        <span>내용</span>
+                        <button type="button" onclick="document.getElementById('writeContentHtmlFile').click()" style="padding:4px 10px; background:var(--brand-gray,#6b7280); color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:12px; font-weight:500;">📁 HTML 파일 불러오기</button>
+                        <input type="file" id="writeContentHtmlFile" accept=".html,.htm,text/html" style="display:none;" onchange="loadHtmlFileToTextarea(this, 'writeContent', 'writeContentHtmlStatus')">
+                        <span id="writeContentHtmlStatus" style="font-size:12px; color:var(--text-light);"></span>
+                    </label>
+                    <textarea id="writeContent" placeholder="게시물 내용을 입력하세요..."></textarea>
+                </div>
+            </div>
+
+            <div class="write-form-actions">
+                <button type="button" class="write-cancel-btn" onclick="closeWriteModal()">취소</button>
+                <button type="button" class="write-submit-btn" id="writeSubmitBtn" onclick="submitWriteForm()">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 메뉴/카테고리 수정 모달 -->
+    <div class="write-modal-overlay" id="editMenuModal" onclick="if(event.target===this) closeEditMenuModal()">
+        <div class="write-modal" style="max-width:480px;">
+            <h2 id="editMenuModalTitle">수정</h2>
+            <div class="write-form-group">
+                <label>이름</label>
+                <input type="text" id="editMenuName" placeholder="이름을 입력하세요" onkeypress="if(event.key==='Enter') submitEditMenu()">
+            </div>
+            <div class="write-form-group" id="editMenuBoardGroup" style="display:none;">
+                <label>소속 메뉴 (대분류)</label>
+                <select id="editMenuBoardSel" style="width:100%; padding:10px 12px; border:2px solid var(--border-color); border-radius:8px; font-size:14px;"></select>
+                <div style="font-size:12px; color:var(--text-light); margin-top:6px;">⚠️ 소속 메뉴를 바꾸면 이 카테고리에 속한 게시물들도 함께 이동됩니다.</div>
+            </div>
+            <div class="write-form-group">
+                <label>보기 방식</label>
+                <div style="display:flex; gap:8px;">
+                    <label style="flex:1; display:flex; align-items:center; gap:8px; padding:12px 16px; border:2px solid var(--border-color); border-radius:8px; cursor:pointer; transition:all 0.15s;" id="editMenuViewList" onclick="selectEditMenuView('list')">
+                        <input type="radio" name="editMenuView" value="list" checked> 📋 리스트형
+                    </label>
+                    <label style="flex:1; display:flex; align-items:center; gap:8px; padding:12px 16px; border:2px solid var(--border-color); border-radius:8px; cursor:pointer; transition:all 0.15s;" id="editMenuViewGallery" onclick="selectEditMenuView('gallery')">
+                        <input type="radio" name="editMenuView" value="gallery"> 🖼️ 갤러리형
+                    </label>
+                </div>
+            </div>
+            <div class="write-form-actions">
+                <button type="button" class="write-cancel-btn" onclick="closeEditMenuModal()">취소</button>
+                <button type="button" class="write-submit-btn" onclick="submitEditMenu()">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 연락처 추가/수정 모달 -->
+    <div class="write-modal-overlay" id="contactModal" onclick="if(event.target===this) closeContactModal()">
+        <div class="write-modal" style="max-width:520px;">
+            <h2 id="contactModalTitle">직원 추가</h2>
+            <div class="write-form-row">
+                <div class="write-form-group"><label>이름</label><input type="text" id="cmName" placeholder="홍길동"></div>
+                <div class="write-form-group"><label>직급</label><input type="text" id="cmPosition" placeholder="책임"></div>
+            </div>
+            <div class="write-form-row">
+                <div class="write-form-group"><label>부서</label><input type="text" id="cmDept" placeholder="경영지원본부/인사총무팀"></div>
+                <div class="write-form-group"><label>내선번호</label><input type="text" id="cmPhone" placeholder="02-2284-9999"></div>
+            </div>
+            <div class="write-form-row">
+                <div class="write-form-group"><label>휴대폰</label><input type="text" id="cmMobile" placeholder="010-1234-5678"></div>
+                <div class="write-form-group"><label>이메일</label><input type="email" id="cmEmail" placeholder="hong@neolab.net"></div>
+            </div>
+            <div class="write-form-row">
+                <div class="write-form-group"><label>상태</label>
+                    <select id="cmStatus" style="width:100%; padding:10px 14px; border:1px solid var(--border-color); border-radius:8px; font-size:14px;">
+                        <option value="active">🟢 재직중</option>
+                        <option value="dispatch">🟠 파견중</option>
+                        <option value="leave">🟣 휴직중</option>
+                    </select>
+                </div>
+            </div>
+            <div class="write-form-actions">
+                <button type="button" class="write-cancel-btn" onclick="closeContactModal()">취소</button>
+                <button type="button" class="write-submit-btn" onclick="submitContactModal()">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 갤러리 라이트박스 -->
+    <div class="lightbox-overlay" id="lightboxOverlay" onclick="if(event.target===this) closeLightbox()">
+        <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+        <div class="lightbox-content" id="lightboxContent"></div>
+        <div class="lightbox-info">
+            <div class="lightbox-title" id="lightboxTitle"></div>
+            <div class="lightbox-sub" id="lightboxSub"></div>
+        </div>
+    </div>
+
+    <!-- 📱 모바일 하단 탭바 (앱 네비게이션) -->
+    <nav class="mobile-tabbar" id="mobileTabbar" aria-label="하단 네비게이션">
+        <button type="button" class="tabbar-item active" data-tab="home" onclick="navigateTo('dashboard'); mobileTabSelect('home')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+            </svg>
+            <span>홈</span>
+        </button>
+        <button type="button" class="tabbar-item" data-tab="search" onclick="mobileOpenSearch()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <span>검색</span>
+        </button>
+        <button type="button" class="tabbar-item" data-tab="notice" onclick="navigateTo('notices'); mobileTabSelect('notice')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+            </svg>
+            <span>공지</span>
+        </button>
+        <button type="button" class="tabbar-item" data-tab="fav" onclick="mobileScrollFavorites()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+            </svg>
+            <span>즐겨찾기</span>
+        </button>
+        <button type="button" class="tabbar-item" data-tab="menu" onclick="document.getElementById('sidebar').classList.toggle('mobile-show'); mobileTabSelect('menu')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+            <span>메뉴</span>
+        </button>
+    </nav>
+    <script>
+        function mobileTabSelect(tab) {
+            document.querySelectorAll('.tabbar-item').forEach(function(el){ el.classList.remove('active'); });
+            var el = document.querySelector('.tabbar-item[data-tab="'+tab+'"]');
+            if (el) el.classList.add('active');
+        }
+        function mobileOpenSearch() {
+            mobileTabSelect('search');
+            var inp = document.getElementById('globalSearch');
+            if (inp) { inp.scrollIntoView({behavior:'smooth', block:'center'}); setTimeout(function(){ inp.focus(); }, 300); }
+        }
+        function mobileScrollFavorites() {
+            mobileTabSelect('fav');
+            if (typeof navigateTo === 'function') navigateTo('dashboard');
+            setTimeout(function(){
+                var el = document.getElementById('favoritesSection');
+                if (el && el.style.display !== 'none') {
+                    el.scrollIntoView({behavior:'smooth', block:'start'});
+                } else {
+                    alert('즐겨찾기한 게시물이 없습니다. 게시물의 ⭐ 버튼을 눌러 추가하세요.');
+                }
+            }, 200);
+        }
+    </script>
+
+<!-- 오프라인 데모: Mock API 레이어 (반드시 core.js 보다 먼저 로드) -->
+<script src="js/mock-api.js"></script>
+<!-- 오프라인 데모: xlsx CDN 제거 (Excel 내보내기/가져오기는 데모에서 비활성, 코드가 graceful 폴백) -->
+<script src="js/core.js?v=139"></script>
+<script src="js/navigation.js?v=139"></script>
+<script src="js/search.js?v=139"></script>
+<script src="js/viewer.js?v=139"></script>
+<script src="js/board.js?v=139"></script>
+<script src="js/features.js?v=139"></script>
+<script src="js/app.js?v=139"></script>
+<script src="js/admin.js?v=139"></script>
+</body>
+</html>
