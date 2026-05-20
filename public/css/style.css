@@ -343,6 +343,11 @@
         /* 테이블 */
         .table-container { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; }
+        /* 연락처 No. 열 — CSS counter로 화면 표시 순서대로 1,2,3… (정렬·필터해도 자동 재계산) */
+        #contactTable tbody { counter-reset: contactRow; }
+        #contactTable tbody tr { counter-increment: contactRow; }
+        #contactTable td.contact-no::before { content: counter(contactRow); }
+        #contactTable .contact-no-col, #contactTable td.contact-no { width: 48px; text-align: center; color: var(--text-light); font-variant-numeric: tabular-nums; }
         thead { background: var(--main-bg); }
         th { padding: 12px 16px; text-align: left; font-size: 13px; font-weight: 700; color: var(--text-primary); border-bottom: 2px solid var(--border-color); cursor: pointer; user-select: none; }
         th:hover { background: var(--border-color); }

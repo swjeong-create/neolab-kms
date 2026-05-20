@@ -150,7 +150,7 @@ async function loadContacts() {
     if (!tbody) return;
     tbody.innerHTML = '';
     if (contacts.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 40px; color: #999;">등록된 연락처가 없습니다</td></tr>`; return;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 40px; color: #999;">등록된 연락처가 없습니다</td></tr>`; return;
     }
     contacts.forEach(contact => {
         let badgeClass = 'active';
@@ -163,6 +163,7 @@ async function loadContacts() {
             : '<span style="color:var(--text-light);">-</span>';
         tbody.innerHTML += `
             <tr data-dept="${contact.dept}">
+                <td class="contact-no"></td>
                 <td><div style="display: flex; align-items: center; gap: 12px;"><div class="avatar" style="background: ${color};">${(contact.name || '?').substring(0, 1)}</div><span>${contact.name}</span></div></td>
                 <td>${contact.position}</td><td>${contact.dept}</td><td>${contact.phone}</td><td>${mobileCell}</td><td>${contact.email}</td>
                 <td><span class="status-badge ${badgeClass}">${contact.status === 'active' ? '재직중' : contact.status === 'leave' ? '휴직중' : contact.status === 'dispatch' ? '파견중' : contact.status}</span></td>
@@ -943,7 +944,7 @@ function filterContacts() {
     const term = contactSearch.value.toLowerCase();
     const dept = deptFilter ? deptFilter.value : 'all';
     tbody.querySelectorAll('tr').forEach(row => {
-        const n = row.cells[0]?.textContent.toLowerCase() || '';
+        const n = row.cells[1]?.textContent.toLowerCase() || '';
         const d = row.getAttribute('data-dept') || '';
         const deptMatch = dept === 'all' || d.includes(dept) || (dept === 'CEO' && (d === 'CEO' || d === 'CSO' || d === 'COO' || d.startsWith('COO') || d.startsWith('CSO')));
         row.style.display = (n.includes(term) || d.toLowerCase().includes(term)) && deptMatch ? '' : 'none';
@@ -961,8 +962,9 @@ document.querySelectorAll('th[data-sort]').forEach(th => {
         sortDirection[column] = !sortDirection[column];
         const direction = sortDirection[column] ? 1 : -1;
         rows.sort((a, b) => {
-            let aVal = a.cells[column==='name'?0:column==='position'?1:2].textContent.trim();
-            let bVal = b.cells[column==='name'?0:column==='position'?1:2].textContent.trim();
+            // No. 열이 cells[0]이라 이름=1, 직급=2, 부서=3으로 +1 시프트
+            let aVal = a.cells[column==='name'?1:column==='position'?2:3].textContent.trim();
+            let bVal = b.cells[column==='name'?1:column==='position'?2:3].textContent.trim();
             return aVal.localeCompare(bVal, 'ko') * direction;
         });
         rows.forEach(row => tbody.appendChild(row));
