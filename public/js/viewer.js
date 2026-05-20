@@ -70,16 +70,28 @@ function renderInlineContent(content) {
     }
     return '<div class="mobile-inline-text">' + content + '</div>';
 }
-// 데스크톱 상세 뷰용 — kms-html-content는 .content padding(32px)을 상쇄해 최대 폭으로 렌더
-// + "전체화면으로 보기" 버튼 추가 (원본 standalone 페이지처럼 보고 싶을 때)
+// 데스크톱 상세 뷰용 — kms-html-content는 viewport 전체 폭(사이드바 옆 끝까지)으로 렌더
+// + "넓게 보기" 모달 / "새 탭" 버튼 제공
 // opts.marginTop: 위 콘텐츠(이미지 등)와의 간격 (이미지+iframe 동시 등록 시 필요)
+//
+// 폭 처리: #productDetailImages가 display:flex; align-items:center; 라
+// width:calc(100%+64px)/margin:0 -32px 트릭이 안 먹힘 (flex 자식이 stretch되지 않음).
+// 대신 align-self:stretch + 음수 margin으로 부모 cross-axis 전체로 확장,
+// 추가로 calc로 .content padding(32px)까지 상쇄해 사이드바 옆 끝까지 채움.
 function renderDetailContent(content, opts) {
     opts = opts || {};
     var mtStyle = opts.marginTop ? 'margin-top:' + opts.marginTop + 'px;' : '';
     if (/<iframe[^>]*class\s*=\s*["'][^"']*kms-html-content/i.test(content || '')) {
-        return '<div style="' + mtStyle + '">'
+        // align-self:stretch — 부모(#productDetailImages)의 align-items:center 무시하고 cross-axis 전체로
+        // margin:0 -32px — .content padding(32px×2) 추가 상쇄
+        var wrapStyle = mtStyle
+            + ' align-self:stretch;'
+            + ' width:auto;'
+            + ' margin-left:-32px; margin-right:-32px;'
+            + ' background:#fff;';
+        return '<div style="' + wrapStyle + '">'
              + buildFullscreenLink(content, 'right')
-             + '<div style="width:calc(100% + 64px); margin:0 -32px; background:#fff; border-radius:0;">' + content + '</div>'
+             + content
              + '</div>';
     }
     return '<div style="' + mtStyle + ' padding:24px; background:var(--card-bg); border-radius:12px; border:1px solid var(--border-color); font-size:15px; line-height:1.8; color:var(--text-primary); white-space:pre-wrap;">' + content + '</div>';
